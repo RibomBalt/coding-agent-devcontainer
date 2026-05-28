@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:20-slim
 
 ARG TZ
 ENV TZ="$TZ"
@@ -8,10 +8,18 @@ ARG NPM_MIRROR=https://registry.npmmirror.com
 ARG PYPI_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 
 # Use tuna mirrors for faster package installation in China
-COPY ./debian-tuna.sources /etc/apt/sources.list.d/debian.sources
+COPY ./debian-tuna.sources /tmp/debian.sources
 
 # Install basic development tools and iptables/ipset
 RUN apt-get update && apt-get install -y --no-install-recommends \
+  apt-transport-https \
+  ca-certificates && \
+  # update apt sources to tuna mirrors
+  mv /tmp/debian.sources /etc/apt/sources.list.d/debian.sources && \
+  # install packages
+  apt-get update && apt-get install -y --no-install-recommends \
+  curl \
+  wget \
   less \
   git \
   procps \
