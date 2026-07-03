@@ -116,7 +116,8 @@ RUN npm config set registry "${NPM_MIRROR}" && \
 # RUN curl -fsSL https://claude.ai/install.sh | bash -s stable
 
 # install opencode via shell
-RUN curl -fsSL https://opencode.ai/install.sh | bash
+RUN curl -fsSL https://opencode.ai/install | bash && \
+    mkdir -p ~/.config/opencode
 
 # Install UV of Python env
 RUN wget -qO- https://astral.sh/uv/install.sh | sh && \
