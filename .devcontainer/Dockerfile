@@ -112,8 +112,11 @@ RUN npm config set registry "${NPM_MIRROR}" && \
     # Install Playwright
     npx -y playwright@1.59.1 install chromium
 
-# install claude code via shell
-RUN curl -fsSL https://claude.ai/install.sh | bash -s stable
+# # install claude code via shell
+# RUN curl -fsSL https://claude.ai/install.sh | bash -s stable
+
+# install opencode via shell
+RUN curl -fsSL https://opencode.ai/install.sh | bash
 
 # Install UV of Python env
 RUN wget -qO- https://astral.sh/uv/install.sh | sh && \
