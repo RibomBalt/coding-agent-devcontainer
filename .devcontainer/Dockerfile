@@ -3,7 +3,6 @@ FROM node:20-slim
 ARG TZ
 ENV TZ="$TZ"
 
-ARG CLAUDE_CODE_VERSION=latest
 ARG NPM_MIRROR=https://registry.npmmirror.com
 ARG PYPI_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 
@@ -112,9 +111,6 @@ RUN npm config set registry "${NPM_MIRROR}" && \
     # Install Playwright
     npx -y playwright@1.59.1 install chromium
 
-# # install claude code via shell
-# RUN curl -fsSL https://claude.ai/install.sh | bash -s stable
-
 # install opencode via shell
 RUN curl -fsSL https://opencode.ai/install | bash && \
     mkdir -p ~/.config/opencode
@@ -129,10 +125,25 @@ RUN wget -qO- https://astral.sh/uv/install.sh | sh && \
     echo "url = \"https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/\"" >> $HOME/.config/uv/uv.toml && \
     echo "default = true" >> $HOME/.config/uv/uv.toml
 
-# Copy and set up firewall script
+
+# Copy and set up firewall script / openssh access
 COPY init-firewall.sh /usr/local/bin/
 USER root
-RUN chmod +x /usr/local/bin/init-firewall.sh && \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  openssh-server \
+  fd-find \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* && \
+  # Set zsh as the default shell for the node user and configure sudoers for firewall script
+  usermod -s /bin/zsh node && \
+  # Set up firewall script and sudoers for node user
+  chmod +x /usr/local/bin/init-firewall.sh && \
   echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
   chmod 0440 /etc/sudoers.d/node-firewall
 USER node
+RUN mkdir -p /home/node/.ssh/host_ssh_key && \
+  chmod 700 /home/node/.ssh && \
+  chmod 700 /home/node/.ssh/host_ssh_key && \
+  touch /home/node/.ssh/authorized_keys && \
+  chmod 600 /home/node/.ssh/authorized_keys && \
+  # opencode local share
+  mkdir -p /home/node/.local/share/opencode

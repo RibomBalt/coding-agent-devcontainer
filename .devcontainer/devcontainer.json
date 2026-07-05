@@ -45,18 +45,26 @@
             }
         }
     },
+    "appPort": ["50022:2222"],
     "remoteUser": "node",
     "mounts": [
         "source=opencode-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
-        "source=opencode-config,target=/home/node/.config/opencode,type=volume"
+        "source=opencode-config,target=/home/node/.config/opencode,type=volume",
+        "source=opencode-local-share,target=/home/node/.local/share/opencode,type=volume",
+        "source=${env:HOME}/.ssh/id_ed25519.pub,target=/ssh-auth-key.pub,type=bind,readonly",
+        "source=devcontainer-ssh-hostkey,target=/home/node/.ssh/host_ssh_key,type=volume"
     ],
     "containerEnv": {
         "NODE_OPTIONS": "--max-old-space-size=4096",
-        "OPENCODE_CONFIG": "/home/node/.config/opencode",
-        "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
+        "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+        "HTTP_PROXY": "http://host.docker.internal:7890",
+        "HTTPS_PROXY": "http://host.docker.internal:7890",
+        "NO_PROXY": "localhost,127.0.0.1,host.docker.internal"
     },
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
     "workspaceFolder": "/workspace",
+    "postStartCommand": "/usr/sbin/sshd -p 2222 -h /home/node/.ssh/host_ssh_key/ssh_host_rsa_key -o AuthorizedKeysFile=/home/node/.ssh/authorized_keys",
     // "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
+    "postCreateCommand": "chmod +x ./.devcontainer/init-ssh.sh && ./.devcontainer/init-ssh.sh",
     "waitFor": "postStartCommand"
 }
