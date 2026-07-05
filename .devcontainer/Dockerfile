@@ -146,4 +146,15 @@ RUN mkdir -p /home/node/.ssh/host_ssh_key && \
   touch /home/node/.ssh/authorized_keys && \
   chmod 600 /home/node/.ssh/authorized_keys && \
   # opencode local share
-  mkdir -p /home/node/.local/share/opencode
+  mkdir -p /home/node/.local/share/opencode && \
+  # vimrc 
+  echo "set number" > /home/node/.vimrc && \
+  echo "set tabstop=4" >> /home/node/.vimrc && \
+  echo "set shiftwidth=4" >> /home/node/.vimrc && \
+  echo "set expandtab" >> /home/node/.vimrc && \
+  echo "set autoindent" >> /home/node/.vimrc && \
+  echo "set smartindent" >> /home/node/.vimrc && \
+  echo "set cursorline" >> /home/node/.vimrc && \
+  echo "set encoding=utf-8" >> /home/node/.vimrc && \
+  echo "set fileencoding=utf-8" >> /home/node/.vimrc && \
+  echo "syntax on" >> /home/node/.vimrc

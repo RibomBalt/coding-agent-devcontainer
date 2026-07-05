@@ -12,7 +12,7 @@
             "NO_PROXY": "localhost,127.0.0.1"
         }
     },
-    "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
+    "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--gpus", "all"],
     "customizations": {
         "vscode": {
             "extensions": [
@@ -59,7 +59,12 @@
         "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
         "HTTP_PROXY": "http://host.docker.internal:7890",
         "HTTPS_PROXY": "http://host.docker.internal:7890",
-        "NO_PROXY": "localhost,127.0.0.1,host.docker.internal"
+        "NO_PROXY": "localhost,127.0.0.1,host.docker.internal",
+        "http_proxy": "http://host.docker.internal:7890",
+        "https_proxy": "http://host.docker.internal:7890",
+        "no_proxy": "localhost,127.0.0.1,host.docker.internal",
+        "NVIDIA_VISIBLE_DEVICES": "all",
+        "NVIDIA_DRIVER_CAPABILITIES": "compute,utility"
     },
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
     "workspaceFolder": "/workspace",
