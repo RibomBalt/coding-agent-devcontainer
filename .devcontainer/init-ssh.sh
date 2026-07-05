@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 echo $(cat /ssh-auth-key.pub) > ~/.ssh/authorized_keys

@@ -65,6 +65,6 @@
     "workspaceFolder": "/workspace",
     "postStartCommand": "/usr/sbin/sshd -p 2222 -h /home/node/.ssh/host_ssh_key/ssh_host_rsa_key -o AuthorizedKeysFile=/home/node/.ssh/authorized_keys",
     // "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
-    "postCreateCommand": "chmod +x ./.devcontainer/init-ssh.sh && ./.devcontainer/init-ssh.sh",
+    "postCreateCommand": "cp .devcontainer/init-ssh.sh /tmp/init-ssh.sh && chmod +x /tmp/init-ssh.sh && /tmp/init-ssh.sh",
     "waitFor": "postStartCommand"
 }
