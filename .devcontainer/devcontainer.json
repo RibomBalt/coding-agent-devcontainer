@@ -13,7 +13,7 @@
     //         "NO_PROXY": "localhost,127.0.0.1"
     //     }
     // },
-    "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--gpus", "all"],
+    "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--gpus", "detect"],
     "customizations": {
         "vscode": {
             "extensions": [
@@ -46,7 +46,7 @@
             }
         }
     },
-    "appPort": ["50022:2222"],
+    "appPort": ["${localEnv:DEVCONTAINER_SSH_PORT:50022}:2222"],
     "remoteUser": "node",
     "mounts": [
         "source=opencode-bashhistory-${devcontainerId},target=/commandhistory,type=volume",

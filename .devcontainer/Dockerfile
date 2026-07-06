@@ -49,6 +49,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   rsync \
   tree \
   && npx playwright@${PLAYWRIGHT_VERSION} install-deps chromium \
+  && npm cache clean --force \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Ensure default node user has access to /usr/local/share
@@ -116,8 +117,10 @@ ENV PATH=$PNPM_HOME:$PATH
 RUN npm config set registry "${NPM_MIRROR}" && \
     npm install -g pnpm && \
     pnpm config set registry "${NPM_MIRROR}" && \
-    # Install Playwright
-    pnpx playwright@${PLAYWRIGHT_VERSION} install chromium
+    # # Install Playwright
+    # pnpx playwright@${PLAYWRIGHT_VERSION} install chromium && \
+    npm cache clean --force && \
+    pnpm store prune
 
 # install opencode via shell
 RUN curl -fsSL https://opencode.ai/install | bash && \
@@ -129,7 +132,6 @@ RUN curl -fsSL https://opencode.ai/install | bash && \
 RUN wget -qO- https://astral.sh/uv/install.sh | sh && \
     echo "export PATH=\"$HOME/.local/bin:\$PATH\"" >> ~/.zshrc && \
     echo "export PATH=\"$HOME/.local/bin:\$PATH\"" >> ~/.bashrc && \
-    "$HOME/.local/bin/uv" python install 3.13 && \
     mkdir -p $HOME/.config/uv && \
     echo "[[index]]" > $HOME/.config/uv/uv.toml && \
     echo "url = \"${PYPI_MIRROR}\"" >> $HOME/.config/uv/uv.toml && \
@@ -165,4 +167,5 @@ RUN cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
   echo "set cursorline" >> /home/node/.vimrc && \
   echo "set encoding=utf-8" >> /home/node/.vimrc && \
   echo "set fileencoding=utf-8" >> /home/node/.vimrc && \
-  echo "syntax on" >> /home/node/.vimrc
+  echo "syntax on" >> /home/node/.vimrc && \
+  echo "set mouse=a" >> /home/node/.vimrc
