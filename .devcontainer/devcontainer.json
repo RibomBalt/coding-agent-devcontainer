@@ -1,17 +1,18 @@
 {
     "name": "OpenCode Sandbox",
-    "build": {
-        "dockerfile": "Dockerfile",
-        "args": {
-            "TZ": "${localEnv:TZ:Asia/Shanghai}",
-            "CLAUDE_CODE_VERSION": "latest",
-            "GIT_DELTA_VERSION": "0.18.2",
-            "ZSH_IN_DOCKER_VERSION": "1.2.0",
-            "HTTP_PROXY": "http://host.docker.internal:7890",
-            "HTTPS_PROXY": "http://host.docker.internal:7890",
-            "NO_PROXY": "localhost,127.0.0.1"
-        }
-    },
+    "image": "opencode-sandbox-ribom:latest",
+    // "build": {
+    //     "dockerfile": "Dockerfile",
+    //     "args": {
+    //         "TZ": "${localEnv:TZ:Asia/Shanghai}",
+    //         "GIT_DELTA_VERSION": "0.18.2",
+    //         "ZSH_IN_DOCKER_VERSION": "1.2.0",
+    //         "PLAYWRIGHT_VERSION": "1.59.1",
+    //         "HTTP_PROXY": "http://host.docker.internal:7890",
+    //         "HTTPS_PROXY": "http://host.docker.internal:7890",
+    //         "NO_PROXY": "localhost,127.0.0.1"
+    //     }
+    // },
     "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--gpus", "all"],
     "customizations": {
         "vscode": {
@@ -70,6 +71,6 @@
     "workspaceFolder": "/workspace",
     "postStartCommand": "/usr/sbin/sshd -p 2222 -h /home/node/.ssh/host_ssh_key/ssh_host_rsa_key -o AuthorizedKeysFile=/home/node/.ssh/authorized_keys",
     // "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
-    "postCreateCommand": "cp .devcontainer/init-ssh.sh /tmp/init-ssh.sh && chmod +x /tmp/init-ssh.sh && /tmp/init-ssh.sh",
+    "postCreateCommand": "/home/node/.local/bin/init-ssh.sh",
     "waitFor": "postStartCommand"
 }

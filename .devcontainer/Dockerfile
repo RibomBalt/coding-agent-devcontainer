@@ -3,6 +3,8 @@ FROM node:20-slim
 ARG TZ
 ENV TZ="$TZ"
 
+ARG PLAYWRIGHT_VERSION=1.59.1
+
 ARG NPM_MIRROR=https://registry.npmmirror.com
 ARG PYPI_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 
@@ -39,9 +41,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   vim \
   python3 \
   python3-pip \
-  chromium \
-  # npx playwright install-deps chromium --dry-run
-   libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 libatspi2.0-0t64 libcairo2 libcups2t64 libdbus-1-3 libdrm2 libgbm1 libglib2.0-0t64 libnspr4 libnss3 libpango-1.0-0 libx11-6 libxcb1 libxcomposite1 libxdamage1 libxext6 libxfixes3 libxkbcommon0 libxrandr2 xvfb fonts-noto-color-emoji fonts-unifont libfontconfig1 libfreetype6 xfonts-scalable fonts-liberation fonts-ipafont-gothic fonts-wqy-zenhei fonts-tlwg-loma-otf fonts-freefont-ttf \
+  openssh-server \
+  fd-find \
+  build-essential \
+  ccache \
+  ripgrep \
+  rsync \
+  tree \
+  && npx playwright@${PLAYWRIGHT_VERSION} install-deps chromium \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Ensure default node user has access to /usr/local/share
@@ -64,15 +71,16 @@ RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhisto
 ENV DEVCONTAINER=true
 
 # Create workspace and config directories and set permissions
-RUN mkdir -p /workspace /home/node/.claude && \
-  chown -R node:node /workspace /home/node/.claude
+RUN mkdir -p /workspace && \
+  chown -R node:node /workspace && \
+  usermod -s /bin/zsh node
 
 WORKDIR /workspace
 
 ARG GIT_DELTA_VERSION=0.18.2
 RUN ARCH=$(dpkg --print-architecture) && \
   wget "https://github.com/dandavison/delta/releases/download/${GIT_DELTA_VERSION}/git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb" && \
-  sudo dpkg -i "git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb" && \
+  dpkg -i "git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb" && \
   rm "git-delta_${GIT_DELTA_VERSION}_${ARCH}.deb"
 
 # Set up non-root user
@@ -109,11 +117,13 @@ RUN npm config set registry "${NPM_MIRROR}" && \
     npm install -g pnpm && \
     pnpm config set registry "${NPM_MIRROR}" && \
     # Install Playwright
-    npx -y playwright@1.59.1 install chromium
+    pnpx playwright@${PLAYWRIGHT_VERSION} install chromium
 
 # install opencode via shell
 RUN curl -fsSL https://opencode.ai/install | bash && \
-    mkdir -p ~/.config/opencode
+    mkdir -p ~/.config/opencode && \
+    # opencode local share
+    mkdir -p /home/node/.local/share/opencode
 
 # Install UV of Python env
 RUN wget -qO- https://astral.sh/uv/install.sh | sh && \
@@ -122,7 +132,7 @@ RUN wget -qO- https://astral.sh/uv/install.sh | sh && \
     "$HOME/.local/bin/uv" python install 3.13 && \
     mkdir -p $HOME/.config/uv && \
     echo "[[index]]" > $HOME/.config/uv/uv.toml && \
-    echo "url = \"https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/\"" >> $HOME/.config/uv/uv.toml && \
+    echo "url = \"${PYPI_MIRROR}\"" >> $HOME/.config/uv/uv.toml && \
     echo "default = true" >> $HOME/.config/uv/uv.toml
 
 
@@ -130,24 +140,22 @@ RUN wget -qO- https://astral.sh/uv/install.sh | sh && \
 COPY init-firewall.sh /usr/local/bin/
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  openssh-server \
-  fd-find \
   && apt-get clean && rm -rf /var/lib/apt/lists/* && \
   # Set zsh as the default shell for the node user and configure sudoers for firewall script
-  usermod -s /bin/zsh node && \
   # Set up firewall script and sudoers for node user
   chmod +x /usr/local/bin/init-firewall.sh && \
   echo "node ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
   chmod 0440 /etc/sudoers.d/node-firewall
 USER node
-RUN mkdir -p /home/node/.ssh/host_ssh_key && \
+COPY init-ssh.sh /tmp
+RUN cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
+  chmod +x /home/node/.local/bin/init-ssh.sh && \
+  mkdir -p /home/node/.ssh/host_ssh_key && \
   chmod 700 /home/node/.ssh && \
   chmod 700 /home/node/.ssh/host_ssh_key && \
   touch /home/node/.ssh/authorized_keys && \
   chmod 600 /home/node/.ssh/authorized_keys && \
-  # opencode local share
-  mkdir -p /home/node/.local/share/opencode && \
-  # vimrc 
+  # vimrc
   echo "set number" > /home/node/.vimrc && \
   echo "set tabstop=4" >> /home/node/.vimrc && \
   echo "set shiftwidth=4" >> /home/node/.vimrc && \
