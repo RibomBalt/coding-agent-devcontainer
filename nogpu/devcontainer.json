@@ -1,7 +1,7 @@
 {
     "name": "OpenCode Sandbox",
     "image": "opencode-sandbox-ribom:latest",
-    "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW", "--gpus=all"],
+    "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
     "customizations": {
         "vscode": {
             "extensions": [
@@ -51,9 +51,7 @@
         "NO_PROXY": "localhost,127.0.0.1,host.docker.internal",
         "http_proxy": "http://host.docker.internal:7890",
         "https_proxy": "http://host.docker.internal:7890",
-        "no_proxy": "localhost,127.0.0.1,host.docker.internal",
-        "NVIDIA_VISIBLE_DEVICES": "all",
-        "NVIDIA_DRIVER_CAPABILITIES": "compute,utility"
+        "no_proxy": "localhost,127.0.0.1,host.docker.internal"
     },
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
     "workspaceFolder": "/workspace",
