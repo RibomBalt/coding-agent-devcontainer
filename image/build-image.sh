@@ -4,7 +4,7 @@ set -euo pipefail
 
 WSL_CLASH_PROXY="http://host.docker.internal:7890"
 DIR="$(dirname "$0")"
-IMAGE="opencode-sandbox-ribom:latest"
+IMAGE=${IMAGE:-"opencode-sandbox-ribom:latest"}
 
 pushd "$DIR"
 trap 'popd' EXIT
