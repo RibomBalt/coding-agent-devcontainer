@@ -41,7 +41,10 @@
         "source=opencode-config,target=/home/node/.config/opencode,type=volume",
         "source=opencode-local-share,target=/home/node/.local/share/opencode,type=volume",
         "source=${env:HOME}/.ssh/id_ed25519.pub,target=/ssh-auth-key.pub,type=bind,readonly",
-        "source=devcontainer-ssh-hostkey,target=/home/node/.ssh/host_ssh_key,type=volume"
+        "source=devcontainer-ssh-hostkey,target=/home/node/.ssh/host_ssh_key,type=volume",
+        "source=devcontainer-uv-cache,target=/home/node/.cache/uv,type=volume",
+        "source=devcontainer-opencode-cache,target=/home/node/.cache/opencode,type=volume",
+        "source=devcontainer-pnpm-home,target=/usr/local/share/pnpm-global,type=volume"
     ],
     "containerEnv": {
         "NODE_OPTIONS": "--max-old-space-size=4096",
@@ -58,5 +61,6 @@
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
     "workspaceFolder": "/workspace",
     "postStartCommand": "/home/node/.local/bin/init-ssh.sh",
+    "postCreateCommand": "pnpm add -g --allow-build=opencode-ai opencode-ai || echo \"Failed to install opencode-ai, install it afterwards with: 'pnpm add -g --allow-build=opencode-ai opencode-ai'\"",
     "waitFor": "postStartCommand"
 }

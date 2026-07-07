@@ -123,10 +123,8 @@ RUN npm config set registry "${NPM_MIRROR}" && \
     pnpm store prune
 
 # install opencode via shell
-RUN curl -fsSL https://opencode.ai/install | bash && \
-    mkdir -p ~/.config/opencode && \
-    # opencode local share
-    mkdir -p /home/node/.local/share/opencode
+# move opencode install to postCreateCommand and use pnpm cache
+# RUN curl -fsSL https://opencode.ai/install | bash
 
 # Install UV of Python env
 RUN wget -qO- https://astral.sh/uv/install.sh | sh && \
@@ -150,6 +148,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   chmod 0440 /etc/sudoers.d/node-firewall
 USER node
 COPY init-ssh.sh /tmp
+# ssh
 RUN cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
   chmod +x /home/node/.local/bin/init-ssh.sh && \
   mkdir -p /home/node/.ssh/host_ssh_key && \
@@ -168,4 +167,10 @@ RUN cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
   echo "set encoding=utf-8" >> /home/node/.vimrc && \
   echo "set fileencoding=utf-8" >> /home/node/.vimrc && \
   echo "syntax on" >> /home/node/.vimrc && \
-  echo "set mouse=a" >> /home/node/.vimrc
+  echo "set mouse=a" >> /home/node/.vimrc && \
+  # uv cache
+  mkdir -p /home/node/.cache/uv && \
+  # opencode local share / config / cache
+  mkdir -p /home/node/.local/share/opencode && \
+  mkdir -p ~/.config/opencode && \
+  mkdir -p ~/.cache/opencode
