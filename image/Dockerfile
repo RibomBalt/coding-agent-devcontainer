@@ -176,4 +176,7 @@ RUN cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
   # opencode local share / config / cache
   mkdir -p /home/node/.local/share/opencode && \
   mkdir -p ~/.config/opencode && \
-  mkdir -p ~/.cache/opencode
+  mkdir -p ~/.cache/opencode && \
+  # git global config
+  git config --global user.name "opencode" && \
+  git config --global user.email "dev@opencode.ai"
