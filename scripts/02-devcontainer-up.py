@@ -5,6 +5,7 @@ import os
 import shutil
 import socket
 import errno
+from pathlib import Path
 
 DEVCONTAINER_CMD = [
     ["devcontainer"],
@@ -13,6 +14,8 @@ DEVCONTAINER_CMD = [
     ["bun", "x", "@devcontainers/cli"],
     ["bunx", "@devcontainers/cli"]
 ]
+
+PROJ_ROOT = Path(__file__).parent.parent
 
 def check_npx_availablity():
     """
@@ -42,9 +45,9 @@ def workspace_up(cmd, workspace_path, gpus=True, ssh_port=50022):
      DEVCONTAINER_SSH_PORT=<ssh_port> devcontainer up --workspace-folder <workspace_path> --config <gpu/devcontainer.json|nogpu/devcontainer.json>
     """
     if gpus:
-        config = "gpu/devcontainer.json"
+        config = str(PROJ_ROOT / "gpu/devcontainer.json")
     else:
-        config = "nogpu/devcontainer.json"
+        config = str(PROJ_ROOT / "nogpu/devcontainer.json")
 
     for port in range(ssh_port, 65536):
         if check_port_availablity(port):
