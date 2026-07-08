@@ -60,6 +60,7 @@
         "no_proxy": "localhost,127.0.0.1,host.docker.internal",
         "OPENCODE_SERVER_USERNAME": "${localEnv:OPENCODE_SERVER_USERNAME}",
         "OPENCODE_SERVER_PASSWORD": "${localEnv:OPENCODE_SERVER_PASSWORD}",
+        "DEVCONTAINER_OPCD_PORT": "${localEnv:DEVCONTAINER_OPCD_PORT}",
         "NVIDIA_VISIBLE_DEVICES": "all",
         "NVIDIA_DRIVER_CAPABILITIES": "compute,utility"
     },
