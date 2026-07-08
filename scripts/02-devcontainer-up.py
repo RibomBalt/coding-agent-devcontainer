@@ -40,7 +40,7 @@ def check_port_availablity(port):
             return False
         raise
 
-def workspace_up(cmd, workspace_path, gpus=True, ssh_port=50022):
+def workspace_up(cmd, workspace_path, gpus=True, ssh_port=50022, opencode_port=50096):
     """
      DEVCONTAINER_SSH_PORT=<ssh_port> devcontainer up --workspace-folder <workspace_path> --config <gpu/devcontainer.json|nogpu/devcontainer.json>
     """
@@ -53,11 +53,23 @@ def workspace_up(cmd, workspace_path, gpus=True, ssh_port=50022):
         if check_port_availablity(port):
             env = os.environ.copy()
             env["DEVCONTAINER_SSH_PORT"] = str(port)
-            pid = subprocess.run(cmd + ["up", "--workspace-folder", workspace_path, "--config", config], env=env)
-            return pid, port
+            break
+    else:
+        print(f"No available port found for SSH on {ssh_port}-65535")
+        return None, None
 
-    print(f"No available port found for SSH on {ssh_port}-65535")
-    return None, None
+    for port in range(opencode_port, 65536):
+        if port == env["DEVCONTAINER_SSH_PORT"]:
+            continue
+        if check_port_availablity(port):
+            env["DEVCONTAINER_OPCD_PORT"] = str(port)
+            break
+    else:
+        print(f"No available port found for Opcode on {opencode_port}-65535")
+        return None, None
+
+    pid = subprocess.run(cmd + ["up", "--workspace-folder", workspace_path, "--config", config], env=env)
+    return pid, port
 
 def main():
     parser = argparse.ArgumentParser(description="Start a devcontainer workspace")

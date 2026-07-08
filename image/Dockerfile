@@ -148,9 +148,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   chmod 0440 /etc/sudoers.d/node-firewall
 USER node
 COPY init-ssh.sh /tmp
+COPY start-opencode-web.py /tmp
 # ssh
 RUN cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
   chmod +x /home/node/.local/bin/init-ssh.sh && \
+  cp /tmp/start-opencode-web.py /home/node/.local/bin/start-opencode-web.py && \
+  chmod +x /home/node/.local/bin/start-opencode-web.py && \
   mkdir -p /home/node/.ssh/host_ssh_key && \
   chmod 700 /home/node/.ssh && \
   chmod 700 /home/node/.ssh/host_ssh_key && \

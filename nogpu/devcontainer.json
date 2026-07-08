@@ -34,7 +34,10 @@
             }
         }
     },
-    "appPort": ["${localEnv:DEVCONTAINER_SSH_PORT:50022}:2222"],
+    "appPort": [
+        "${localEnv:DEVCONTAINER_SSH_PORT:50022}:2222",
+        "${localEnv:DEVCONTAINER_OPCD_PORT:50096}:4096"
+    ],
     "remoteUser": "node",
     "mounts": [
         "source=opencode-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
@@ -54,11 +57,13 @@
         "NO_PROXY": "localhost,127.0.0.1,host.docker.internal",
         "http_proxy": "http://host.docker.internal:7890",
         "https_proxy": "http://host.docker.internal:7890",
-        "no_proxy": "localhost,127.0.0.1,host.docker.internal"
+        "no_proxy": "localhost,127.0.0.1,host.docker.internal",
+        "OPENCODE_SERVER_USERNAME": "${localEnv:OPENCODE_SERVER_USERNAME}",
+        "OPENCODE_SERVER_PASSWORD": "${localEnv:OPENCODE_SERVER_PASSWORD}"
     },
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
     "workspaceFolder": "/workspace",
-    "postStartCommand": "/home/node/.local/bin/init-ssh.sh",
+    "postStartCommand": "/home/node/.local/bin/init-ssh.sh && /home/node/.local/bin/start-opencode-web.py",
     "postCreateCommand": "pnpm add -g --allow-build=opencode-ai opencode-ai || echo \"Failed to install opencode-ai, install it afterwards with: 'pnpm add -g --allow-build=opencode-ai opencode-ai'\"",
     "waitFor": "postStartCommand"
 }
