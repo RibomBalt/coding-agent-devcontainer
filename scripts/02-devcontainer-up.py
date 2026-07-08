@@ -43,7 +43,7 @@ def check_port_availablity(port):
         raise
 
 
-def workspace_up(cmd, workspace_path, gpus=True, ssh_port=50022, opencode_port=50096):
+def workspace_up(cmd, workspace_path, gpus=True, ssh_port=50022):
     """
     DEVCONTAINER_SSH_PORT=<ssh_port> devcontainer up --workspace-folder <workspace_path> --config <gpu/devcontainer.json|nogpu/devcontainer.json>
     """
