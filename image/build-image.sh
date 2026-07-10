@@ -17,4 +17,5 @@ docker build -t "$IMAGE" \
     --build-arg HTTP_PROXY="${WSL_CLASH_PROXY:-}" \
     --build-arg HTTPS_PROXY="${WSL_CLASH_PROXY:-}" \
     --build-arg NO_PROXY="localhost,127.0.0.1,host.docker.internal" \
+    --build-arg GO_VERSION=${GO_VERSION-1.26.5} \
     .

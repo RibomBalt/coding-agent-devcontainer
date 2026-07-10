@@ -135,6 +135,19 @@ RUN wget -qO- https://astral.sh/uv/install.sh | sh && \
     echo "url = \"${PYPI_MIRROR}\"" >> $HOME/.config/uv/uv.toml && \
     echo "default = true" >> $HOME/.config/uv/uv.toml
 
+# Install Golang
+ARG GO_VERSION=1.26.5
+RUN wget -O /tmp/golang.tar.gz https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -C $HOME/.local -xzf /tmp/golang.tar.gz && \
+    rm -f /tmp/golang.tar.gz && \
+    echo "export PATH=\"\$PATH\":$HOME/.local/go/bin" >> ~/.zshrc && \
+    echo "export PATH=\"\$PATH\":$HOME/.local/go/bin" >> ~/.bashrc && \
+    $HOME/.local/go/bin/go env -w GO111MODULE=on && \
+    $HOME/.local/go/bin/go env -w GOPROXY=https://goproxy.cn,direct && \
+    GOPATH=$HOME/go && \
+    $HOME/.local/go/bin/go env -w GOPATH=$GOPATH && \
+    echo "export PATH=\"\$PATH\":$GOPATH/bin" >> ~/.zshrc && \
+    echo "export PATH=\"\$PATH\":$GOPATH/bin" >> ~/.bashrc
 
 # Copy and set up firewall script / openssh access
 COPY init-firewall.sh /usr/local/bin/
