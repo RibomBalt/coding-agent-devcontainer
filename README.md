@@ -73,7 +73,7 @@ python scripts/02-devcontainer-up.py -w /path/to/your/workspace
 # 启用 GPU
 python scripts/02-devcontainer-up.py -w /path/to/your/workspace --gpus
 
-# 指定 SSH 起始端口（默认 50022，自动寻找第一个可用端口）
+# 指定 SSH 起始端口（默认 40022，自动寻找第一个可用端口）
 python scripts/02-devcontainer-up.py -w /path/to/your/workspace -p 2222
 ```
 
@@ -125,7 +125,7 @@ opencode attach <opencode 外部端口>
 若需自定义端口，不建议手动设置 `DEVCONTAINER_OPCD_PORT`，而应通过 `-p` 参数指定 SSH 起始端口，脚本会自动分配后续可用端口：
 
 ```bash
-python scripts/02-devcontainer-up.py -w /path/to/your/workspace -p 50022
+python scripts/02-devcontainer-up.py -w /path/to/your/workspace -p 40022
 ```
 
 ### 数据持久化

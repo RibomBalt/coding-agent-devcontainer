@@ -43,7 +43,7 @@ def check_port_availablity(port):
         raise
 
 
-def workspace_up(cmd, workspace_path, gpus=True, ssh_port=50022):
+def workspace_up(cmd, workspace_path, gpus=True, ssh_port=40022):
     """
     DEVCONTAINER_SSH_PORT=<ssh_port> devcontainer up --workspace-folder <workspace_path> --config <gpu/devcontainer.json|nogpu/devcontainer.json>
     """
@@ -84,7 +84,7 @@ def main():
         "--gpus", action="store_true", help="Enable GPU support", default=False
     )
     parser.add_argument(
-        "-p", "--port", "--ssh-port", type=int, default=50022, help="SSH port to use"
+        "-p", "--port", "--ssh-port", type=int, default=40022, help="SSH port to use"
     )
 
     args = parser.parse_args()

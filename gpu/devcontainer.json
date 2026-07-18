@@ -35,8 +35,8 @@
         }
     },
     "appPort": [
-        "${localEnv:DEVCONTAINER_SSH_PORT:50022}:2222",
-        "${localEnv:DEVCONTAINER_OPCD_PORT:50096}:4096"
+        "${localEnv:DEVCONTAINER_SSH_PORT:40022}:2222",
+        "${localEnv:DEVCONTAINER_OPCD_PORT:40096}:4096"
     ],
     "remoteUser": "node",
     "mounts": [
