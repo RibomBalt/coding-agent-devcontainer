@@ -8,6 +8,8 @@ ARG PLAYWRIGHT_VERSION=1.59.1
 ARG NPM_MIRROR=https://registry.npmmirror.com
 ARG PYPI_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 # Use tuna mirrors for faster package installation in China
 COPY ./debian-tuna.sources /tmp/debian.sources
 
@@ -48,8 +50,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ripgrep \
   rsync \
   tree \
+  locales \
   && npx playwright@${PLAYWRIGHT_VERSION} install-deps chromium \
   && npm cache clean --force \
+  && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
+  && locale-gen en_US.UTF-8 \
+  && update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Ensure default node user has access to /usr/local/share
