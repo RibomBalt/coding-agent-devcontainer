@@ -198,4 +198,6 @@ RUN cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
   mkdir -p ~/.cache/opencode && \
   # git global config
   git config --global user.name "opencode" && \
-  git config --global user.email "dev@opencode.ai"
+  git config --global user.email "dev@opencode.ai" && \
+  # geant4 pybind data
+  mkdir -p /home/node/.geant4_pybind
