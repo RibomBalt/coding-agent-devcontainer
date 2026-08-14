@@ -20,9 +20,7 @@ _GPU_ENV = {
     "NVIDIA_DRIVER_CAPABILITIES": "compute,utility",
 }
 
-_NODE_TOOLING_ENV = {
-    "PNPM_HOME": "/usr/local/share/pnpm-global",
-    "NPM_CONFIG_PREFIX": "/usr/local/share/npm-global",
+_PLAYWRIGHT_ENV = {
     "PLAYWRIGHT_BROWSERS_PATH": "/ms-playwright",
 }
 
@@ -83,18 +81,12 @@ _POST_START_COMMAND = (
 )
 
 
-def _post_create_command(selected: list[str]) -> str:
-    if "node-tooling" in selected:
-        return (
-            f'export PATH="{_PNPM_PATH}:$PATH" && '
-            "pnpm add -g --allow-build=opencode-ai opencode-ai || "
-            "echo \"Failed to install opencode-ai, install it afterwards with: "
-            "'pnpm add -g --allow-build=opencode-ai opencode-ai'\""
-        )
+def _post_create_command() -> str:
     return (
-        "npm install -g opencode-ai || "
+        f'export PATH="{_PNPM_PATH}:$PATH" && '
+        "pnpm add -g --allow-build=opencode-ai opencode-ai || "
         "echo \"Failed to install opencode-ai, install it afterwards with: "
-        "'npm install -g opencode-ai'\""
+        "'pnpm add -g --allow-build=opencode-ai opencode-ai'\""
     )
 
 
@@ -118,8 +110,8 @@ def render_devcontainer(selected: list[str], gpu: bool) -> dict:
     container_env = dict(_COMMON_ENV)
     if gpu:
         container_env.update(_GPU_ENV)
-    if "node-tooling" in selected:
-        container_env.update(_NODE_TOOLING_ENV)
+    if "playwright" in selected:
+        container_env.update(_PLAYWRIGHT_ENV)
 
     workspace_mount = (
         "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated"
@@ -138,24 +130,7 @@ def render_devcontainer(selected: list[str], gpu: bool) -> dict:
         "workspaceMount": workspace_mount,
         "workspaceFolder": "/workspace",
         "postStartCommand": _POST_START_COMMAND,
-        "postCreateCommand": _post_create_command(selected),
+        "postCreateCommand": _post_create_command(),
         "waitFor": "postStartCommand",
     }
 
-
-def render_base_devcontainer() -> dict:
-    """Build the devcontainer.json used to build the pre-built base image.
-
-    References the common features via OCI. Used by CI's `devcontainer build`.
-    """
-    features = {}
-    for feature_id in ["system-tools", "shell-setup", "ssh-firewall", "opencode-config"]:
-        feature = get_feature(feature_id)
-        if feature is not None:
-            features[feature.reference] = {}
-
-    return {
-        "name": "OpenCode Sandbox Base",
-        "image": "node:20-slim",
-        "features": features,
-    }

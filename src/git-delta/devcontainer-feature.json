@@ -10,7 +10,5 @@
             "description": "git-delta version to install"
         }
     },
-    "installsAfter": [
-        "system-tools"
-    ]
+    "installsAfter": []
 }

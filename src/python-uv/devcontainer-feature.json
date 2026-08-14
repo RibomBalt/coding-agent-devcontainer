@@ -10,7 +10,5 @@
             "description": "PyPI mirror to use for uv"
         }
     },
-    "installsAfter": [
-        "system-tools"
-    ]
+    "installsAfter": []
 }

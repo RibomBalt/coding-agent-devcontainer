@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-opencode-devcontainer = "coding_agent_devcontainer.cli:main"
+coding-agent-devcontainer = "coding_agent_devcontainer.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

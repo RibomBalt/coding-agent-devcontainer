@@ -1,0 +1,19 @@
+{
+    "id": "playwright",
+    "version": "1.0.0",
+    "name": "Playwright (Chromium)",
+    "description": "Installs Playwright Chromium system dependencies and browser binaries.",
+    "options": {
+        "playwright_version": {
+            "type": "string",
+            "default": "1.59.1",
+            "description": "Playwright version to install"
+        },
+        "playwright_download_host": {
+            "type": "string",
+            "default": "",
+            "description": "Playwright browser download mirror (e.g. https://registry.npmmirror.com/-/binary/playwright)"
+        }
+    },
+    "installsAfter": []
+}

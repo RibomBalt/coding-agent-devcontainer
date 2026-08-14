@@ -17,3 +17,5 @@ tmp/
 
 # devcontainer features 打包产物
 output/
+
+.devcontainer

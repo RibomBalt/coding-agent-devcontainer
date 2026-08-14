@@ -26,7 +26,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-base-image:
-    needs: publish-features
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,34 +37,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install devcontainer CLI
-        run: npm install -g @devcontainers/cli
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install package
-        run: pip install .
-
-      - name: Render base config
-        env:
-          DEVCONTAINER_OWNER: ${{ github.repository_owner }}
-          DEVCONTAINER_REPO: ${{ github.event.repository.name }}
-        run: opencode-devcontainer render-base -o .devcontainer/base.json
-
       - name: Build base image
         run: |
-          devcontainer build \
-            --workspace-folder . \
-            --config .devcontainer/base.json \
-            --image-name ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-base:latest
+          docker build \
+            -f image/Dockerfile-base \
+            -t ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-base:latest \
+            image
 
       - name: Push base image
         run: docker push ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-base:latest

@@ -10,7 +10,5 @@
             "description": "Go version to install"
         }
     },
-    "installsAfter": [
-        "system-tools"
-    ]
+    "installsAfter": []
 }

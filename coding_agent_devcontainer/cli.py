@@ -7,8 +7,8 @@ import questionary
 from rich.console import Console
 
 from .constants import OPTIONAL_FEATURE_IDS
-from .features import all_features, get_feature, optional_features
-from .render import render_base_devcontainer, render_devcontainer
+from .features import get_feature, optional_features
+from .render import render_devcontainer
 
 console = Console()
 
@@ -79,11 +79,7 @@ def _prompt_gpu(current: bool) -> bool:
 
 
 def cmd_list(args: argparse.Namespace) -> int:
-    console.print("[bold]Common Features（已内置于 base image）[/bold]")
-    for f in all_features():
-        if f.common:
-            console.print(f"  • {f.id}: {f.name}")
-    console.print("\n[bold]Optional Features（按需选择）[/bold]")
+    console.print("[bold]Optional Features（按需选择）[/bold]")
     for f in optional_features():
         console.print(f"  • {f.id}: {f.name} — {f.description}")
     return 0
@@ -158,16 +154,6 @@ def cmd_update(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_render_base(args: argparse.Namespace) -> int:
-    path = Path(args.output)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(render_base_devcontainer(), indent=4, ensure_ascii=False) + "\n"
-    )
-    console.print(f"[green]✓ 已生成 base image 配置 {path}[/green]")
-    return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="opencode-devcontainer",
@@ -214,12 +200,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--non-interactive", action="store_true", help="非交互模式"
     )
     update_parser.set_defaults(func=cmd_update)
-
-    base_parser = sub.add_parser("render-base", help="生成用于构建 base image 的 devcontainer.json")
-    base_parser.add_argument(
-        "-o", "--output", default=".devcontainer/base.json", help="输出路径"
-    )
-    base_parser.set_defaults(func=cmd_render_base)
 
     return parser
 

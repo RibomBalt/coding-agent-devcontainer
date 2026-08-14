@@ -2,59 +2,31 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from .constants import COMMON_FEATURE_IDS, NAMESPACE, OPTIONAL_FEATURE_IDS
+from .constants import NAMESPACE, OPTIONAL_FEATURE_IDS
 
 SRC_DIR = Path(__file__).resolve().parent.parent / "src"
 
-# Human-facing metadata for the TUI. `common` marks features baked into the base image.
-# `version` is the major version referenced from OCI (`:1`).
+# Human-facing metadata for the TUI. `version` is the major version referenced
+# from OCI (`:1`).
 _FEATURE_META = {
-    "system-tools": {
-        "name": "System Development Tools",
-        "description": "Essential packages, locale, Playwright system deps",
-        "common": True,
-        "version": "1",
-    },
-    "shell-setup": {
-        "name": "Shell Setup (zsh + powerlevel10k)",
-        "description": "zsh-in-docker with powerlevel10k and fzf",
-        "common": True,
-        "version": "1",
-    },
-    "ssh-firewall": {
-        "name": "SSH Access & Firewall",
-        "description": "SSH init script, OpenCode web startup, firewall",
-        "common": True,
-        "version": "1",
-    },
-    "opencode-config": {
-        "name": "OpenCode Configuration",
-        "description": "vimrc, git identity, OpenCode directories",
-        "common": True,
-        "version": "1",
-    },
-    "node-tooling": {
-        "name": "Node.js Tooling",
-        "description": "pnpm + npm registry + Playwright browsers",
-        "common": False,
+    "playwright": {
+        "name": "Playwright (Chromium)",
+        "description": "Playwright Chromium system deps and browsers",
         "version": "1",
     },
     "python-uv": {
         "name": "Python & UV",
         "description": "uv package manager + PyPI mirror",
-        "common": False,
         "version": "1",
     },
     "golang": {
         "name": "Go",
         "description": "Go toolchain + GOPROXY",
-        "common": False,
         "version": "1",
     },
     "git-delta": {
         "name": "Git Delta",
         "description": "Syntax-highlighted git diffs",
-        "common": False,
         "version": "1",
     },
 }
@@ -66,7 +38,6 @@ class Feature:
     name: str
     description: str
     version: str
-    common: bool
 
     @property
     def reference(self) -> str:
@@ -87,22 +58,15 @@ def _read_version(feature_id: str) -> str:
 
 
 def all_features() -> list[Feature]:
-    features = []
-    for feature_id, meta in _FEATURE_META.items():
-        features.append(
-            Feature(
-                id=feature_id,
-                name=meta["name"],
-                description=meta["description"],
-                version=_read_version(feature_id),
-                common=meta["common"],
-            )
+    return [
+        Feature(
+            id=feature_id,
+            name=meta["name"],
+            description=meta["description"],
+            version=_read_version(feature_id),
         )
-    return features
-
-
-def common_features() -> list[Feature]:
-    return [f for f in all_features() if f.id in COMMON_FEATURE_IDS]
+        for feature_id, meta in _FEATURE_META.items()
+    ]
 
 
 def optional_features() -> list[Feature]:
