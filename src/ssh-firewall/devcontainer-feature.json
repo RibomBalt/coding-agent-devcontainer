@@ -1,0 +1,10 @@
+{
+    "id": "ssh-firewall",
+    "version": "1.0.0",
+    "name": "SSH Access & Firewall",
+    "description": "Installs the SSH initialization script, the OpenCode web startup script, and the firewall script with sudoers whitelist configuration.",
+    "options": {},
+    "installsAfter": [
+        "system-tools"
+    ]
+}

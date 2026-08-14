@@ -1,0 +1,16 @@
+{
+    "id": "golang",
+    "version": "1.0.0",
+    "name": "Go",
+    "description": "Installs the Go toolchain and configures GOPROXY and GOPATH.",
+    "options": {
+        "go_version": {
+            "type": "string",
+            "default": "1.26.5",
+            "description": "Go version to install"
+        }
+    },
+    "installsAfter": [
+        "system-tools"
+    ]
+}

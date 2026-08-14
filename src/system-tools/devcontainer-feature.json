@@ -1,0 +1,19 @@
+{
+    "id": "system-tools",
+    "version": "1.0.0",
+    "name": "System Development Tools",
+    "description": "Installs essential system packages (git, zsh, vim, ripgrep, fzf, iptables, openssh-server, etc.), configures locale, and installs Playwright Chromium system dependencies.",
+    "options": {
+        "tz": {
+            "type": "string",
+            "default": "Asia/Shanghai",
+            "description": "Timezone to configure for the container"
+        },
+        "playwright_version": {
+            "type": "string",
+            "default": "1.59.1",
+            "description": "Playwright version used to install Chromium system dependencies"
+        }
+    },
+    "installsAfter": []
+}

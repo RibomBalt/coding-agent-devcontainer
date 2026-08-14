@@ -43,14 +43,24 @@ def check_port_availablity(port):
         raise
 
 
+def resolve_config(workspace_path, gpus=True):
+    """
+    Prefer the project-local `.devcontainer/devcontainer.json`; fall back to the
+    repository-level gpu/nogpu configs when the project has not migrated yet.
+    """
+    local_config = Path(workspace_path) / ".devcontainer" / "devcontainer.json"
+    if local_config.exists():
+        return str(local_config)
+    if gpus:
+        return str(PROJ_ROOT / "gpu/devcontainer.json")
+    return str(PROJ_ROOT / "nogpu/devcontainer.json")
+
+
 def workspace_up(cmd, workspace_path, gpus=True, ssh_port=40022):
     """
-    DEVCONTAINER_SSH_PORT=<ssh_port> devcontainer up --workspace-folder <workspace_path> --config <gpu/devcontainer.json|nogpu/devcontainer.json>
+    DEVCONTAINER_SSH_PORT=<ssh_port> devcontainer up --workspace-folder <workspace_path> --config <config>
     """
-    if gpus:
-        config = str(PROJ_ROOT / "gpu/devcontainer.json")
-    else:
-        config = str(PROJ_ROOT / "nogpu/devcontainer.json")
+    config = resolve_config(workspace_path, gpus)
 
     available_ports = []
     for port in range(ssh_port, 65536):
@@ -91,10 +101,7 @@ def main():
     if not args.workspace_path:
         parser.error("Workspace path is required")
 
-    if not args.gpus:
-        config = "nogpu/devcontainer.json"
-    else:
-        config = "gpu/devcontainer.json"
+    config = resolve_config(args.workspace_path, args.gpus)
     print(f"Using config: {config}")
 
     cmd = check_npx_availablity()

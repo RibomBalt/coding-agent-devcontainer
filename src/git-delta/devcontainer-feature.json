@@ -1,0 +1,16 @@
+{
+    "id": "git-delta",
+    "version": "1.0.0",
+    "name": "Git Delta",
+    "description": "Installs git-delta for syntax-highlighted git diffs.",
+    "options": {
+        "git_delta_version": {
+            "type": "string",
+            "default": "0.18.2",
+            "description": "git-delta version to install"
+        }
+    },
+    "installsAfter": [
+        "system-tools"
+    ]
+}

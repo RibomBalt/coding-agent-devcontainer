@@ -1,0 +1,22 @@
+import os
+
+# OCI registry namespace for published features.
+REGISTRY = os.environ.get("DEVCONTAINER_REGISTRY", "ghcr.io")
+OWNER = os.environ.get("DEVCONTAINER_OWNER", "ribombalt")
+REPO = os.environ.get("DEVCONTAINER_REPO", "coding-agent-devcontainer")
+
+# Feature OCI namespace: <registry>/<owner>/<repo>
+NAMESPACE = f"{REGISTRY}/{OWNER}/{REPO}"
+
+# Pre-built base image that already contains the "common" features.
+BASE_IMAGE = os.environ.get(
+    "DEVCONTAINER_BASE_IMAGE", f"{REGISTRY}/{OWNER}/{REPO}-base:latest"
+)
+
+# Feature ids that are baked into the base image (always available).
+COMMON_FEATURE_IDS = ["system-tools", "shell-setup", "ssh-firewall", "opencode-config"]
+
+# Feature ids that projects may opt into (selectable in the TUI).
+OPTIONAL_FEATURE_IDS = ["node-tooling", "python-uv", "golang", "git-delta"]
+
+REMOTE_USER = "node"
