@@ -1,6 +1,6 @@
 {
     "id": "python-uv",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "name": "Python & UV",
     "description": "Installs the uv Python package manager and configures the PyPI mirror.",
     "options": {
@@ -10,5 +10,12 @@
             "description": "PyPI mirror to use for uv"
         }
     },
+    "mounts": [
+        {
+          "source": "devcontainer-uv-cache",
+          "target": "/home/node/.cache/uv",
+          "type": "volume"
+        }
+    ],
     "installsAfter": []
 }

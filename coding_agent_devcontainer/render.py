@@ -71,7 +71,6 @@ _MOUNTS = [
     "source=devcontainer-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
     "source=${env:HOME}/.ssh/id_ed25519.pub,target=/ssh-auth-key.pub,type=bind,readonly",
     "source=devcontainer-ssh-hostkey,target=/home/node/.ssh/host_ssh_key,type=volume",
-    "source=devcontainer-uv-cache,target=/home/node/.cache/uv,type=volume",
     "source=devcontainer-pnpm-home,target=/usr/local/share/pnpm-global,type=volume",
     "source=geant4-pybind-data,target=/home/node/.geant4_pybind,type=volume",
 ]

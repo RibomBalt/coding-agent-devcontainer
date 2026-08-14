@@ -202,11 +202,11 @@ coding-agent-devcontainer up -w /path/to/your/workspace -p 40022
 | `opencode-local-share` * | `/home/node/.local/share/opencode` | OpenCode 本地数据 |
 | `devcontainer-opencode-cache` * | `/home/node/.cache/opencode` | OpenCode 缓存 |
 | `devcontainer-ssh-hostkey` | `/home/node/.ssh/host_ssh_key` | SSH Host Key |
-| `devcontainer-uv-cache` | `/home/node/.cache/uv` | UV 包管理器缓存 |
+| `devcontainer-uv-cache` * | `/home/node/.cache/uv` | UV 包管理器缓存 |
 | `devcontainer-pnpm-home` | `/usr/local/share/pnpm-global` | pnpm 全局包及 store |
 | `geant4-pybind-data` | `/home/node/.geant4_pybind` | geant4 pybind 数据 |
 
-> \* 标记的 Volume 由 `opencode` feature 声明，仅在启用该 feature 时挂载。
+> \* 标记的 Volume 由对应 feature 声明，仅在启用该 feature 时挂载。
 
 ## 开发
 

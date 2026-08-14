@@ -147,8 +147,6 @@ RUN mkdir -p /home/node/.local/bin && \
   echo "set fileencoding=utf-8" >> /home/node/.vimrc && \
   echo "syntax on" >> /home/node/.vimrc && \
   echo "set mouse=a" >> /home/node/.vimrc && \
-  # uv cache
-  mkdir -p /home/node/.cache/uv && \
   # git global config (generic identity; agent features override this)
   git config --global user.name "devcontainer" && \
   git config --global user.email "devcontainer@localhost" && \
