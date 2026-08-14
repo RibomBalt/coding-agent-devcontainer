@@ -15,6 +15,6 @@ BASE_IMAGE = os.environ.get(
 )
 
 # Feature ids that projects may opt into (selectable in the TUI).
-OPTIONAL_FEATURE_IDS = ["playwright", "python-uv", "golang", "git-delta"]
+OPTIONAL_FEATURE_IDS = ["opencode", "playwright", "python-uv", "golang", "git-delta"]
 
 REMOTE_USER = "node"

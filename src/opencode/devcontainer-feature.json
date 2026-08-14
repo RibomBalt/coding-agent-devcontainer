@@ -1,0 +1,33 @@
+{
+    "id": "opencode",
+    "version": "1.0.0",
+    "name": "OpenCode Coding Agent",
+    "description": "Installs and launches the OpenCode coding agent.",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "latest",
+            "description": "OpenCode version to install"
+        }
+    },
+    "mounts": [
+        {
+            "source": "opencode-config",
+            "target": "/home/node/.config/opencode",
+            "type": "volume"
+        },
+        {
+            "source": "opencode-local-share",
+            "target": "/home/node/.local/share/opencode",
+            "type": "volume"
+        },
+        {
+            "source": "devcontainer-opencode-cache",
+            "target": "/home/node/.cache/opencode",
+            "type": "volume"
+        }
+    ],
+    "postCreateCommand": "export PATH=/usr/local/share/pnpm-global/bin:/usr/local/share/npm-global/bin:$PATH && pnpm add -g --allow-build=opencode-ai opencode-ai",
+    "postStartCommand": "/home/node/.local/bin/start-opencode-web.py",
+    "installsAfter": []
+}

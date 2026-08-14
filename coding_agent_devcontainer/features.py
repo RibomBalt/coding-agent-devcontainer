@@ -9,6 +9,11 @@ SRC_DIR = Path(__file__).resolve().parent.parent / "src"
 # Human-facing metadata for the TUI. `version` is the major version referenced
 # from OCI (`:1`).
 _FEATURE_META = {
+    "opencode": {
+        "name": "OpenCode Coding Agent",
+        "description": "Install and launch the OpenCode coding agent",
+        "version": "1",
+    },
     "playwright": {
         "name": "Playwright (Chromium)",
         "description": "Playwright Chromium system deps and browsers",

@@ -98,7 +98,7 @@ ENV VISUAL=vim
 # Global npm/pnpm directories
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
 ENV PNPM_HOME=/usr/local/share/pnpm-global
-ENV PATH=$PNPM_HOME:$NPM_CONFIG_PREFIX/bin:$PATH
+ENV PATH=$PNPM_HOME/bin:$NPM_CONFIG_PREFIX/bin:$PATH
 
 # Use NPM registry in China and install pnpm
 ARG NPM_MIRROR=https://registry.npmmirror.com
@@ -126,13 +126,10 @@ RUN chmod +x /usr/local/bin/init-firewall.sh && \
   chmod 0440 /etc/sudoers.d/node-firewall
 USER node
 COPY init-ssh.sh /tmp
-COPY start-opencode-web.py /tmp
 # ssh + editor + directory setup
 RUN mkdir -p /home/node/.local/bin && \
   cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
   chmod +x /home/node/.local/bin/init-ssh.sh && \
-  cp /tmp/start-opencode-web.py /home/node/.local/bin/start-opencode-web.py && \
-  chmod +x /home/node/.local/bin/start-opencode-web.py && \
   mkdir -p /home/node/.ssh/host_ssh_key && \
   chmod 700 /home/node/.ssh && \
   chmod 700 /home/node/.ssh/host_ssh_key && \
@@ -152,12 +149,8 @@ RUN mkdir -p /home/node/.local/bin && \
   echo "set mouse=a" >> /home/node/.vimrc && \
   # uv cache
   mkdir -p /home/node/.cache/uv && \
-  # opencode local share / config / cache
-  mkdir -p /home/node/.local/share/opencode && \
-  mkdir -p /home/node/.config/opencode && \
-  mkdir -p /home/node/.cache/opencode && \
-  # git global config
-  git config --global user.name "opencode" && \
-  git config --global user.email "dev@opencode.ai" && \
+  # git global config (generic identity; agent features override this)
+  git config --global user.name "devcontainer" && \
+  git config --global user.email "devcontainer@localhost" && \
   # geant4 pybind data
   mkdir -p /home/node/.geant4_pybind

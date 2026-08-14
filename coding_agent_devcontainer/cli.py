@@ -54,12 +54,13 @@ def _write_config(workspace: Path, config: dict) -> Path:
     return path
 
 
-def _prompt_features(current: list[str]) -> list[str]:
+def _prompt_features(current: list[str], default_checked: list[str] | None = None) -> list[str]:
+    default_checked = default_checked or []
     choices = [
         questionary.Choice(
             title=f"{f.name} — {f.description}",
             value=f.id,
-            checked=(f.id in current),
+            checked=(f.id in current or f.id in default_checked),
         )
         for f in optional_features()
     ]
@@ -108,7 +109,7 @@ def cmd_init(args: argparse.Namespace) -> int:
         )
         gpu = args.gpu
     else:
-        selected = _prompt_features(current_selected)
+        selected = _prompt_features(current_selected, default_checked=["opencode"])
         gpu = _prompt_gpu(current_gpu)
 
     for feature_id in selected:
