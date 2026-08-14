@@ -4,7 +4,7 @@
 
 ## Feature 架构
 
-基础工具链（系统软件包、Node.js、pnpm、shell、SSH、OpenCode 配置）统一打包进预构建的 base image，其余工具（Playwright、uv、Go、git-delta）以 [Dev Container Features](https://containers.dev/implementors/features) 形式按需组合，每个项目只安装所需工具链。
+基础工具链（系统软件包、Node.js、pnpm、shell、SSH）统一打包进预构建的 base image，其余工具（Playwright、uv、Go、git-delta）与 coding agent（OpenCode）以 [Dev Container Features](https://containers.dev/implementors/features) 形式按需组合，每个项目只安装所需工具链。
 
 ### 架构总览
 
@@ -16,7 +16,8 @@
 │    + shell/SSH/配置 ─┘  base image                     │
 │                                                         │
 │  src/                     发布 tgz ───► GHCR           │
-│    playwright/  python-uv/  golang/  git-delta/        │
+│    opencode/  playwright/  python-uv/                  │
+│    golang/  git-delta/                                 │
 │                                                         │
 │  coding_agent_devcontainer/  CLI 工具                   │
 │    init / update 交互式生成 devcontainer.json           │
@@ -35,12 +36,13 @@
 
 | Feature | 说明 |
 |---------|------|
+| `opencode` | OpenCode coding agent（默认勾选，安装 + 启动 Web UI） |
 | `playwright` | Playwright Chromium 系统依赖 + 浏览器 |
 | `python-uv` | uv 包管理器 + PyPI 镜像 |
 | `golang` | Go 工具链 + GOPROXY |
 | `git-delta` | 语法高亮 git diff |
 
-系统软件包、Node.js、pnpm、zsh、SSH、OpenCode 配置等基础能力已内置于 base image（`ghcr.io/<owner>/<repo>-base:latest`），可选 feature 在容器创建时按需安装。
+系统软件包、Node.js、pnpm、zsh、SSH 等基础能力已内置于 base image（`ghcr.io/<owner>/<repo>-base:latest`），可选 feature 在容器创建时按需安装。
 
 ### 生成项目配置（CLI）
 
@@ -67,7 +69,7 @@ CLI 会在目标项目生成 `.devcontainer/devcontainer.json`，引用 base ima
 
 | 组件 | 版本/说明 |
 |------|----------|
-| Node.js | 20 (slim) |
+| Node.js | 24.19.0 |
 | Python | 可通过 uv 安装指定版本 |
 | OpenCode | `opencode` CLI（最新版），自动启动 Web UI（`opencode serve`） |
 
@@ -82,7 +84,6 @@ CLI 会在目标项目生成 `.devcontainer/devcontainer.json`，引用 base ima
 ### 预装工具
 
 - **Shell**: zsh + powerlevel10k 主题 + fzf
-- **Git 增强**: git-delta（语法高亮 diff）
 - **编辑器**: vim + VSCode 集成 Prettier / Ruff / ESLint
 - **网络工具**: iptables, ipset, dnsutils, curl, wget
 - **其他**: gh (GitHub CLI), jq, ripgrep (fd-find), man-db, ssh server
@@ -140,18 +141,15 @@ coding-agent-devcontainer init -w /path/to/your/project --non-interactive \
 
 ### 启动容器
 
-> 使用 `scripts/02-devcontainer-up.py`（优先使用项目本地 `.devcontainer/devcontainer.json`，否则回退到仓库 `gpu/`/`nogpu/` 配置）：
-
 ```bash
-# 无 GPU
-python scripts/02-devcontainer-up.py -w /path/to/your/workspace
+# 启动（自动分配 SSH / OpenCode 端口）
+coding-agent-devcontainer up -w /path/to/your/workspace
 
-# 启用 GPU
-python scripts/02-devcontainer-up.py -w /path/to/your/workspace --gpus
-
-# 指定 SSH 起始端口（默认 40022，自动寻找第一个可用端口）
-python scripts/02-devcontainer-up.py -w /path/to/your/workspace -p 2222
+# 指定 SSH 起始端口（默认 40022，自动寻找连续两个空闲端口）
+coding-agent-devcontainer up -w /path/to/your/workspace -p 2222
 ```
+
+> 兼容入口：旧的 `scripts/02-devcontainer-up.py` 仍可用，内部转发到 `coding-agent-devcontainer up`（`--gpus` 参数已废弃，GPU 由 `devcontainer.json` 的 `runArgs` 决定）。
 
 ### VSCode
 
@@ -169,7 +167,7 @@ ssh -p <宿主机映射端口> -o StrictHostKeyChecking=no node@localhost
 
 ### OpenCode Web UI
 
-容器启动后自动运行 `opencode serve`，监听容器内 `4096` 端口。外部映射端口通过 `02-devcontainer-up.py` 动态分配：从 SSH 起始端口向上扫描**连续两个**空闲端口，第一个用于 SSH，第二个用于 OpenCode Web UI（即启动脚本输出的第二个端口）。若直接通过 VSCode 使用 devcontainer（不走脚本），则回退为 `devcontainer.json` 中的默认值 `50096`。
+容器启动后自动运行 `opencode serve`，监听容器内 `4096` 端口。外部映射端口通过 `coding-agent-devcontainer up` 动态分配：从 SSH 起始端口向上扫描**连续两个**空闲端口，第一个用于 SSH，第二个用于 OpenCode Web UI（即启动输出的第二个端口）。若直接通过 VSCode 使用 devcontainer（不走 CLI），则回退为 `devcontainer.json` 中的默认值 `40096`。
 
 ```bash
 # 浏览器访问（使用脚本输出的 opencode 端口）
@@ -185,12 +183,12 @@ opencode attach <opencode 外部端口>
 |----------|------|--------|
 | `OPENCODE_SERVER_USERNAME` | Web UI 登录用户名 | `opencode` |
 | `OPENCODE_SERVER_PASSWORD` | Web UI 登录密码 | 随机 32 字符 |
-| `DEVCONTAINER_OPCD_PORT` | 外部映射端口（仅 devcontainer.json 回退值） | `50096` |
+| `DEVCONTAINER_OPCD_PORT` | 外部映射端口（仅 devcontainer.json 回退值） | `40096` |
 
-若需自定义端口，不建议手动设置 `DEVCONTAINER_OPCD_PORT`，而应通过 `-p` 参数指定 SSH 起始端口，脚本会自动分配后续可用端口：
+若需自定义端口，不建议手动设置 `DEVCONTAINER_OPCD_PORT`，而应通过 `-p` 参数指定 SSH 起始端口，CLI 会自动分配后续可用端口：
 
 ```bash
-python scripts/02-devcontainer-up.py -w /path/to/your/workspace -p 40022
+coding-agent-devcontainer up -w /path/to/your/workspace -p 40022
 ```
 
 ### 数据持久化
@@ -200,12 +198,15 @@ python scripts/02-devcontainer-up.py -w /path/to/your/workspace -p 40022
 | Volume | 挂载路径 | 用途 |
 |--------|---------|------|
 | `opencode-bashhistory-*` | `/commandhistory` | Bash/Zsh 历史 |
-| `opencode-config` | `/home/node/.config/opencode` | OpenCode 配置 |
-| `opencode-local-share` | `/home/node/.local/share/opencode` | OpenCode 本地数据 |
-| `opencode-cache` | `/home/node/.cache/opencode` | OpenCode 缓存 |
+| `opencode-config` * | `/home/node/.config/opencode` | OpenCode 配置 |
+| `opencode-local-share` * | `/home/node/.local/share/opencode` | OpenCode 本地数据 |
+| `devcontainer-opencode-cache` * | `/home/node/.cache/opencode` | OpenCode 缓存 |
 | `devcontainer-ssh-hostkey` | `/home/node/.ssh/host_ssh_key` | SSH Host Key |
 | `devcontainer-uv-cache` | `/home/node/.cache/uv` | UV 包管理器缓存 |
 | `devcontainer-pnpm-home` | `/usr/local/share/pnpm-global` | pnpm 全局包及 store |
+| `geant4-pybind-data` | `/home/node/.geant4_pybind` | geant4 pybind 数据 |
+
+> \* 标记的 Volume 由 `opencode` feature 声明，仅在启用该 feature 时挂载。
 
 ## 开发
 
@@ -218,26 +219,24 @@ python scripts/02-devcontainer-up.py -w /path/to/your/workspace -p 40022
 │   ├── build-image.sh           # 本地构建脚本
 │   ├── debian-tuna.sources      # APT 清华镜像源
 │   ├── init-firewall.sh         # 防火墙初始化（TODO）
-│   ├── init-ssh.sh              # SSH 服务初始化
-│   └── start-opencode-web.py    # opencode serve 启动脚本
+│   └── init-ssh.sh              # SSH 服务初始化
 ├── src/                         # Dev Container Feature 源码（可选 feature，按需组合）
+│   ├── opencode/                # OpenCode coding agent
 │   ├── playwright/              # Playwright Chromium
 │   ├── python-uv/               # uv + PyPI 镜像
 │   ├── golang/                  # Go 工具链
 │   └── git-delta/               # git-delta
 ├── test/                        # Feature 测试（devcontainer features test）
 ├── coding_agent_devcontainer/   # CLI 工具（Python 包）
-│   ├── cli.py                   # init / update / list 命令
+│   ├── cli.py                   # init / update / list / up 命令
+│   ├── up.py                    # 容器启动（端口分配 + devcontainer up）
 │   ├── features.py              # Feature 元数据注册
 │   ├── render.py                # devcontainer.json 渲染
 │   └── constants.py             # 注册表命名空间等常量
 ├── .github/workflows/           # CI：发布 feature + 构建 base image
-├── gpu/                         # 仓库级 GPU 配置（回退用）
-├── nogpu/                       # 仓库级无 GPU 配置（回退用）
 └── scripts/                     # 入口脚本
     ├── 01-build-image.sh        # base image 构建快捷入口
-    ├── 02-devcontainer-up.py    # 容器启动 CLI
-    └── 03-gpus-from-nogpus.py   # GPU 配置文件生成器
+    └── 02-devcontainer-up.py    # 容器启动兼容入口（转发到 coding-agent-devcontainer up）
 ```
 
 ### base image（`image/Dockerfile-base`）
@@ -249,8 +248,8 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 - pnpm + npm/pnpm registry 镜像（npmmirror）
 - 创建 `node` 用户（uid 1000）
 - zsh + powerlevel10k 主题、fzf shell 集成
-- SSH 初始化脚本、OpenCode Web 启动脚本、防火墙脚本 + sudoers
-- vimrc、git 全局身份、OpenCode / uv / geant4 目录
+- SSH 初始化脚本、防火墙脚本 + sudoers
+- vimrc、git 全局身份（通用）、uv / geant4 缓存目录
 
 ### Feature 开发
 
@@ -268,25 +267,18 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 
 > 注意：当前仓库 remote 为 Gitee；如需 GHCR 发布，请将仓库镜像到 GitHub 并配置 `GITHUB_TOKEN`。
 
-### 容器配置 (`gpu/` / `nogpu/devcontainer.json`)
+### 容器配置（`devcontainer.json`）
 
-仓库级 `gpu/` / `nogpu/` 配置用于**未迁移的项目回退**；迁移后的项目使用 CLI 生成的 `.devcontainer/devcontainer.json`。
+项目配置由 CLI 生成（`coding-agent-devcontainer init`），不维护独立的 gpu/nogpu 模板。`--gpu` 仅改变两处：向 `runArgs` 追加 `--gpus=all`，并向 `containerEnv` 添加 `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`。
 
-两份配置差异仅在两处：
-
-| 配置项 | GPU 版 | 无 GPU 版 |
-|--------|--------|-----------|
-| `runArgs` | 含 `--gpus=all` | 不含 |
-| `containerEnv` | 含 `NVIDIA_VISIBLE_DEVICES`、`NVIDIA_DRIVER_CAPABILITIES` | 不含 |
-
-共同包含：
+共同包含（详见生成的 `.devcontainer/devcontainer.json`）：
 
 - **`runArgs`**：`NET_ADMIN` + `NET_RAW` 权限（供 iptables 使用）
-- **`mounts`**：挂载 SSH 公钥（`~/.ssh/id_ed25519.pub` → 容器只读）、7 个持久化 Volume（参见上文数据持久化表）
+- **`mounts`**：SSH 公钥只读挂载、持久化 Volume（见上文数据持久化表）
 - **`appPort`**：映射两个端口 — `${localEnv:DEVCONTAINER_SSH_PORT}` → 容器 `2222`（SSH），`${localEnv:DEVCONTAINER_OPCD_PORT}` → 容器 `4096`（OpenCode Web UI）
-- **`containerEnv`**：`NODE_OPTIONS`（4GB 堆内存）、代理环境变量（大/小写）、`POWERLEVEL9K_DISABLE_GITSTATUS`、`OPENCODE_SERVER_USERNAME` / `OPENCODE_SERVER_PASSWORD`（Web UI 认证）、`DEVCONTAINER_OPCD_PORT`（Web UI 端口）
-- **`postStartCommand`**：依次执行 `init-ssh.sh`（启动 SSH）和 `start-opencode-web.py`（启动 opencode serve）
-- **`postCreateCommand`**：通过 `pnpm add -g --allow-build=opencode-ai opencode-ai` 安装 OpenCode（首次创建时执行）
+- **`containerEnv`**：`NODE_OPTIONS`（4GB 堆内存）、代理环境变量、`POWERLEVEL9K_DISABLE_GITSTATUS`
+- **`remoteEnv`**：OpenCode Web UI 认证（`OPENCODE_SERVER_USERNAME` / `OPENCODE_SERVER_PASSWORD`）与端口（`DEVCONTAINER_OPCD_PORT`）
+- **`postStartCommand`**：`init-ssh.sh`（启动 SSH；OpenCode Web 启动由 `opencode` feature 的 postStartCommand 负责）
 - **`waitFor`**：`postStartCommand`（等待启动完成）
 
 ### SSH 初始化 (`image/init-ssh.sh`)
@@ -313,18 +305,14 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 
 **待完成**：验证脚本在容器启动环境中的可用性，将 `init-firewall.sh` 加入 `postStartCommand`（需确认与 ssh 启动顺序及完整网络连通性）。
 
-### 启动 CLI (`scripts/02-devcontainer-up.py`)
+### 启动命令 (`coding-agent-devcontainer up`)
 
 - 检测可用的 devcontainer CLI（按优先级：`devcontainer` → `npx` → `pnpx` → `bun` → `bunx`）
 - 从指定 SSH 端口开始自动寻找**两个连续**可用端口：第一个用于 SSH，第二个用于 OpenCode Web UI（递增扫描至 65535）
-- 根据 `--gpus` 标志选择 `gpu/` 或 `nogpu/` 配置
+- 使用项目本地 `.devcontainer/devcontainer.json`（不存在则提示先 `init`）
 - 通过 `DEVCONTAINER_SSH_PORT` 和 `DEVCONTAINER_OPCD_PORT` 环境变量注入端口，执行 `devcontainer up`
 
-### GPU 配置生成器 (`scripts/03-gpus-from-nogpus.py`)
-
-从 `nogpu/devcontainer.json` 自动生成 `gpu/devcontainer.json`，添加 `--gpus=all` 参数和 NVIDIA 相关环境变量，确保两个配置保持同步。
-
-### OpenCode Web 启动脚本 (`image/start-opencode-web.py`)
+### OpenCode Web 启动脚本 (`src/opencode/start-opencode-web.py`)
 
 - 检查环境变量，未设置时自动生成随机密码（`secrets.token_urlsafe(32)`）
 - 执行 `opencode serve --port 4096 --hostname 0.0.0.0`（守护进程方式，分离会话）

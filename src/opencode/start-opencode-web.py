@@ -41,7 +41,7 @@ def main():
         f"""opencode serve process started with pid: {pid.pid}
         You can access the web UI at http://localhost:{DEVCONTAINER_OPCD_PORT}
         or you can use `opencode attach {DEVCONTAINER_OPCD_PORT} -u "{env.get("OPENCODE_SERVER_USERNAME", "opencode")}" -p "{env.get("OPENCODE_SERVER_PASSWORD")}"`
-        where {DEVCONTAINER_OPCD_PORT} is maps to 4096 inside container (default 50096).
+        where {DEVCONTAINER_OPCD_PORT} is maps to 4096 inside container (default 40096).
         """
     )
 
