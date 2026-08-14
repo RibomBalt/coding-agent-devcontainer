@@ -10,6 +10,11 @@ _COMMON_ENV = {
     "http_proxy": "http://host.docker.internal:7890",
     "https_proxy": "http://host.docker.internal:7890",
     "no_proxy": "localhost,127.0.0.1,host.docker.internal",
+}
+
+# Runtime-injected environment (not baked into the image). Keep secrets and
+# non-static values here to avoid buildkit lint warnings (SecretsUsedInArgOrEnv).
+_REMOTE_ENV = {
     "OPENCODE_SERVER_USERNAME": "${localEnv:OPENCODE_SERVER_USERNAME}",
     "OPENCODE_SERVER_PASSWORD": "${localEnv:OPENCODE_SERVER_PASSWORD}",
     "DEVCONTAINER_OPCD_PORT": "${localEnv:DEVCONTAINER_OPCD_PORT}",
@@ -63,7 +68,7 @@ _APP_PORT = [
 ]
 
 _MOUNTS = [
-    "source=opencode-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
+    "source=devcontainer-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
     "source=${env:HOME}/.ssh/id_ed25519.pub,target=/ssh-auth-key.pub,type=bind,readonly",
     "source=devcontainer-ssh-hostkey,target=/home/node/.ssh/host_ssh_key,type=volume",
     "source=devcontainer-uv-cache,target=/home/node/.cache/uv,type=volume",
@@ -111,9 +116,9 @@ def render_devcontainer(selected: list[str], gpu: bool) -> dict:
         "remoteUser": "node",
         "mounts": _MOUNTS,
         "containerEnv": container_env,
+        "remoteEnv": dict(_REMOTE_ENV),
         "workspaceMount": workspace_mount,
         "workspaceFolder": "/workspace",
         "postStartCommand": _POST_START_COMMAND,
         "waitFor": "postStartCommand",
     }
-
