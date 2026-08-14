@@ -2,10 +2,8 @@ name: Release features and base image
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "src/**"
-      - "coding_agent_devcontainer/**"
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
