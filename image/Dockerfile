@@ -8,6 +8,8 @@ ARG PLAYWRIGHT_VERSION=1.59.1
 ARG NPM_MIRROR=https://registry.npmmirror.com
 ARG PYPI_MIRROR=https://pypi.tuna.tsinghua.edu.cn/simple
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 # Use tuna mirrors for faster package installation in China
 COPY ./debian-tuna.sources /tmp/debian.sources
 
@@ -48,8 +50,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   ripgrep \
   rsync \
   tree \
+  locales \
   && npx playwright@${PLAYWRIGHT_VERSION} install-deps chromium \
   && npm cache clean --force \
+  && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
+  && locale-gen en_US.UTF-8 \
+  && update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8 \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Ensure default node user has access to /usr/local/share
@@ -135,6 +141,19 @@ RUN wget -qO- https://astral.sh/uv/install.sh | sh && \
     echo "url = \"${PYPI_MIRROR}\"" >> $HOME/.config/uv/uv.toml && \
     echo "default = true" >> $HOME/.config/uv/uv.toml
 
+# Install Golang
+ARG GO_VERSION=1.26.5
+RUN wget -O /tmp/golang.tar.gz https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -C $HOME/.local -xzf /tmp/golang.tar.gz && \
+    rm -f /tmp/golang.tar.gz && \
+    echo "export PATH=\"\$PATH\":$HOME/.local/go/bin" >> ~/.zshrc && \
+    echo "export PATH=\"\$PATH\":$HOME/.local/go/bin" >> ~/.bashrc && \
+    $HOME/.local/go/bin/go env -w GO111MODULE=on && \
+    $HOME/.local/go/bin/go env -w GOPROXY=https://goproxy.cn,direct && \
+    GOPATH=$HOME/go && \
+    $HOME/.local/go/bin/go env -w GOPATH=$GOPATH && \
+    echo "export PATH=\"\$PATH\":$GOPATH/bin" >> ~/.zshrc && \
+    echo "export PATH=\"\$PATH\":$GOPATH/bin" >> ~/.bashrc
 
 # Copy and set up firewall script / openssh access
 COPY init-firewall.sh /usr/local/bin/
@@ -179,4 +198,6 @@ RUN cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
   mkdir -p ~/.cache/opencode && \
   # git global config
   git config --global user.name "opencode" && \
-  git config --global user.email "dev@opencode.ai"
+  git config --global user.email "dev@opencode.ai" && \
+  # geant4 pybind data
+  mkdir -p /home/node/.geant4_pybind
