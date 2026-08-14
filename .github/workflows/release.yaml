@@ -37,12 +37,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build base image
+      - name: Build and push base image
         run: |
-          docker build \
-            -f image/Dockerfile-base \
-            -t ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-base:latest \
-            image
-
-      - name: Push base image
-        run: docker push ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-base:latest
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          IMAGE="ghcr.io/${OWNER,,}/${REPO,,}-base:latest"
+          docker build -f image/Dockerfile-base -t "${IMAGE}" image
+          docker push "${IMAGE}"
