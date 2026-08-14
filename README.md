@@ -46,17 +46,17 @@
 
 ```bash
 # 交互式创建
-opencode-devcontainer init -w /path/to/your/project
+coding-agent-devcontainer init -w /path/to/your/project
 
 # 非交互模式
-opencode-devcontainer init -w /path/to/your/project --non-interactive \
+coding-agent-devcontainer init -w /path/to/your/project --non-interactive \
     --features python-uv,golang --gpu
 
 # 更新已有配置
-opencode-devcontainer update -w /path/to/your/project
+coding-agent-devcontainer update -w /path/to/your/project
 
 # 查看所有可用 feature
-opencode-devcontainer list
+coding-agent-devcontainer list
 ```
 
 CLI 会在目标项目生成 `.devcontainer/devcontainer.json`，引用 base image 并启用所选 feature。
@@ -110,7 +110,7 @@ CLI 会在目标项目生成 `.devcontainer/devcontainer.json`，引用 base ima
    - `pnpx @devcontainers/cli`
    - `bun x @devcontainers/cli`
 3. **SSH 公钥** — 宿主机需存在 `~/.ssh/id_ed25519.pub`，用于容器免密登录
-4. **CLI 工具** — 生成 devcontainer.json 用的 `opencode-devcontainer`：
+4. **CLI 工具** — 生成 devcontainer.json 用的 `coding-agent-devcontainer`：
 
 ```bash
 uv tool install .    # 或 pip install .
@@ -123,18 +123,18 @@ uv tool install .    # 或 pip install .
 使用 CLI 交互式选择项目所需 feature，生成 `.devcontainer/devcontainer.json`：
 
 ```bash
-opencode-devcontainer init -w /path/to/your/project
+coding-agent-devcontainer init -w /path/to/your/project
 ```
 
 或使用非交互模式：
 
 ```bash
 # 无 GPU，选择 python-uv 和 golang
-opencode-devcontainer init -w /path/to/your/project --non-interactive \
+coding-agent-devcontainer init -w /path/to/your/project --non-interactive \
     --features python-uv,golang
 
 # 启用 GPU
-opencode-devcontainer init -w /path/to/your/project --non-interactive \
+coding-agent-devcontainer init -w /path/to/your/project --non-interactive \
     --features python-uv,golang --gpu
 ```
 

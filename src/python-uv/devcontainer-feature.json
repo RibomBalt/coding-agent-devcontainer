@@ -1,6 +1,6 @@
 {
     "id": "python-uv",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "Python & UV",
     "description": "Installs the uv Python package manager and configures the PyPI mirror.",
     "options": {

@@ -1,6 +1,6 @@
 {
     "id": "playwright",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "Playwright (Chromium)",
     "description": "Installs Playwright Chromium system dependencies and browser binaries.",
     "options": {

@@ -9,6 +9,7 @@ from rich.console import Console
 from .constants import OPTIONAL_FEATURE_IDS
 from .features import get_feature, optional_features
 from .render import render_devcontainer
+from .up import check_cli, workspace_up
 
 console = Console()
 
@@ -154,9 +155,30 @@ def cmd_update(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_up(args: argparse.Namespace) -> int:
+    workspace = _workspace_dir(args.workspace)
+
+    if not _devcontainer_path(workspace).exists():
+        console.print(
+            f"[yellow]{_devcontainer_path(workspace)} 不存在，"
+            f"请先运行 `coding-agent-devcontainer init -w {workspace}`[/yellow]"
+        )
+        return 1
+
+    cmd = check_cli()
+    if not cmd:
+        console.print(
+            "[red]未找到 devcontainer CLI（devcontainer / npx / pnpx / bunx）[/red]"
+        )
+        return 1
+    console.print(f"Using devcontainer CLI: {cmd[0]}")
+
+    return workspace_up(cmd, str(workspace), args.ssh_port)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="opencode-devcontainer",
+        prog="coding-agent-devcontainer",
         description="为项目生成/管理 devcontainer.json，按需组合 dev container features。",
     )
     sub = parser.add_subparsers(dest="command")
@@ -200,6 +222,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--non-interactive", action="store_true", help="非交互模式"
     )
     update_parser.set_defaults(func=cmd_update)
+
+    up_parser = sub.add_parser("up", help="启动 devcontainer 容器")
+    up_parser.add_argument("-w", "--workspace", default=".", help="项目路径（默认当前目录）")
+    up_parser.add_argument(
+        "-p",
+        "--port",
+        "--ssh-port",
+        dest="ssh_port",
+        type=int,
+        default=40022,
+        help="SSH 起始端口（默认 40022，自动寻找连续两个空闲端口）",
+    )
+    up_parser.set_defaults(func=cmd_up)
 
     return parser
 
