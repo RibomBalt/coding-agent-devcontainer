@@ -7,3 +7,8 @@ FEATURE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 mkdir -p $USER_HOME/.geant4_pybind && chown -R $USERNAME:$USERNAME $USER_HOME/.geant4_pybind
 cp "$FEATURE_DIR/download-geant4-pybind-data.sh" $USER_HOME/.local/bin/ && chmod +x $USER_HOME/.local/bin/download-geant4-pybind-data.sh
+
+apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libice6 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
