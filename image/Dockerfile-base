@@ -121,7 +121,8 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 # Install Python UV
 COPY install-python-uv.sh /tmp
 ENV PATH="$HOME/.local/bin:$PATH"
-RUN cp /tmp/install-python-uv.sh /home/node/.local/bin/install-python-uv.sh && \
+RUN mkdir -p /home/node/.local/bin && \
+    cp /tmp/install-python-uv.sh /home/node/.local/bin/install-python-uv.sh && \
     chmod +x /home/node/.local/bin/install-python-uv.sh && \
     /home/node/.local/bin/install-python-uv.sh
 
@@ -134,8 +135,7 @@ RUN chmod +x /usr/local/bin/init-firewall.sh && \
 USER node
 COPY init-ssh.sh /tmp
 # ssh + editor + directory setup
-RUN mkdir -p /home/node/.local/bin && \
-  cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
+RUN cp /tmp/init-ssh.sh /home/node/.local/bin/init-ssh.sh && \
   chmod +x /home/node/.local/bin/init-ssh.sh && \
   mkdir -p /home/node/.ssh/host_ssh_key && \
   chmod 700 /home/node/.ssh && \
