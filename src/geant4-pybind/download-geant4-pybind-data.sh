@@ -11,10 +11,13 @@ $UV add geant4-pybind
 $UV sync
 
 cat >main.py <<EOF
-import geant4_pybind as g4
-print("geant4-pybind version:", g4.__version__)
+from geant4_pybind import G4Version
+print("geant4-pybind version:", g4.G4Version)
 EOF
-$UV run python main.py
+
+$UV run python main.py <<EOF
+Y
+EOF
 
 cd /tmp
 rm -rf /tmp/geant4-pybind-test
