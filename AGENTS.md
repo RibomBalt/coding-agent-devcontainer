@@ -5,7 +5,7 @@ Dev container **features 分发**项目（不是应用）：产物是 GHCR 上�
 ## 架构：两层
 
 - **base image** — `image/Dockerfile-base`（`debian:13-slim` + 系统包 + Node.js + pnpm + shell + SSH + 通用配置），所有项目共用，`docker build` 构建。
-- **optional features** — `src/<id>/`（`devcontainer-feature.json` + `install.sh`），按项目选择。当前：`opencode`、`playwright`、`python-uv`、`golang`、`git-delta`。
+- **optional features** — `src/<id>/`（`devcontainer-feature.json` + `install.sh`），按项目选择。当前：`opencode`、`playwright`、`python-uv`、`golang`、`git-delta`、`geant4-pybind`。
 
 关键边界：**coding agent（opencode）是 feature，不烘焙进 base image**。agent 更新频繁，靠 feature 的 `postCreateCommand`（运行时 `pnpm add -g`）安装、`postStartCommand` 启动；`install.sh` 只做目录/脚本/git 身份。
 
@@ -18,6 +18,8 @@ CLI 通过扫描 `src/*/devcontainer-feature.json` 自动发现 feature（`codin
 - 打包验证（不发布）：`devcontainer features package -f src`（生成 `output/`，已 gitignore）。
 - lint：`uv run ruff check coding_agent_devcontainer/ scripts/`。
 - 本地构建 base image：`./scripts/01-build-image.sh [name]`（等价 `docker build -f image/Dockerfile-base image`，需传 `HTTP_PROXY`/`HTTPS_PROXY` 给 zsh-in-docker 下载）。
+- 单 feature 测试：`./scripts/03-feature-test.sh <feature> [image]`（基于 `01-build-image.sh` 构建的镜像，默认 `opencode-sandbox-ribom:latest`；等价 `devcontainer features test -p . -i <image> -u node -f <feature>`）。
+  - 测试脚本放仓库根 `test/<feature-id>/test.sh`（与 `src/` 平级，**不是** `src/<id>/test/`），以 remote user（node）运行。`devcontainer features test` 会执行该 feature 的 `postCreateCommand`。现有：`test/geant4-pybind/test.sh`（校验 `~/.geant4_pybind` 数据目录非空 + `from geant4_pybind import G4Version` 10s 内不超时）。
 
 ## 关键坑（容易踩）
 
@@ -38,6 +40,6 @@ CLI 通过扫描 `src/*/devcontainer-feature.json` 自动发现 feature（`codin
 
 ## 约定
 
-- `scripts/02-devcontainer-up.py` 是**兼容入口**（转发到 `coding-agent-devcontainer up`），勿删；`scripts/01-build-image.sh` 是 base image 构建入口。
+- `scripts/02-devcontainer-up.py` 是**兼容入口**（转发到 `coding-agent-devcontainer up`），勿删；`scripts/01-build-image.sh` 是 base image 构建入口；`scripts/03-feature-test.sh` 是单 feature 本地测试入口。
 - 已删除（勿恢复）：`gpu/`、`nogpu/`、`scripts/03-gpus-from-nogpus.py`、`image/Dockerfile`（旧 node:20-slim 全量版）、`image/start-opencode-web.py`（已移入 `src/opencode/`）。
 - git 身份：base image 写通用 `devcontainer@localhost`，opencode feature 的 install.sh 覆盖为 `opencode`。
