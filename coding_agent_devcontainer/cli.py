@@ -3,6 +3,7 @@ import json
 import sys
 from pathlib import Path
 
+import argcomplete
 import questionary
 from rich.console import Console
 
@@ -102,9 +103,7 @@ def cmd_init(args: argparse.Namespace) -> int:
 
     if args.non_interactive:
         selected = (
-            [f.strip() for f in args.features.split(",") if f.strip()]
-            if args.features
-            else []
+            [f.strip() for f in args.features.split(",") if f.strip()] if args.features else []
         )
         gpu = args.gpu
     else:
@@ -128,9 +127,7 @@ def cmd_update(args: argparse.Namespace) -> int:
     workspace = _workspace_dir(args.workspace)
     existing = _read_existing(workspace)
     if existing is None:
-        console.print(
-            f"[yellow]{_devcontainer_path(workspace)} 不存在，改用 `init` 创建[/yellow]"
-        )
+        console.print(f"[yellow]{_devcontainer_path(workspace)} 不存在，改用 `init` 创建[/yellow]")
         return 1
 
     current_selected = _selected_from_config(existing)
@@ -167,9 +164,7 @@ def cmd_up(args: argparse.Namespace) -> int:
 
     cmd = check_cli()
     if not cmd:
-        console.print(
-            "[red]未找到 devcontainer CLI（devcontainer / npx / pnpx / bunx）[/red]"
-        )
+        console.print("[red]未找到 devcontainer CLI（devcontainer / npx / pnpx / bunx）[/red]")
         return 1
     console.print(f"Using devcontainer CLI: {cmd[0]}")
 
@@ -218,9 +213,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="启用/禁用 GPU 支持（默认保持现有配置）",
     )
-    update_parser.add_argument(
-        "--non-interactive", action="store_true", help="非交互模式"
-    )
+    update_parser.add_argument("--non-interactive", action="store_true", help="非交互模式")
     update_parser.set_defaults(func=cmd_update)
 
     up_parser = sub.add_parser("up", help="启动 devcontainer 容器")
@@ -241,6 +234,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
+    argcomplete.autocomplete(parser)
     args = parser.parse_args(argv)
     if not hasattr(args, "func"):
         parser.print_help()

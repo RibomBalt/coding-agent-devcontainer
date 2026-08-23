@@ -9,6 +9,7 @@ description = "Dev container feature management CLI for the OpenCode sandbox"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "argcomplete>=3.7.2",
     "questionary>=2.0",
     "rich>=13.0",
 ]
