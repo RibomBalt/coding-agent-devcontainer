@@ -6,8 +6,7 @@ from pathlib import Path
 import questionary
 from rich.console import Console
 
-from .constants import OPTIONAL_FEATURE_IDS
-from .features import get_feature, optional_features
+from .features import all_features, get_feature
 from .render import render_devcontainer
 from .up import check_cli, workspace_up
 
@@ -38,7 +37,7 @@ def _selected_from_config(config: dict) -> list[str]:
     selected = []
     for ref in (config.get("features") or {}).keys():
         feature_id = ref.rstrip("/").split("/")[-1].split(":")[0]
-        if feature_id in OPTIONAL_FEATURE_IDS:
+        if feature_id in {f.id for f in all_features()}:
             selected.append(feature_id)
     return selected
 
@@ -62,7 +61,7 @@ def _prompt_features(current: list[str], default_checked: list[str] | None = Non
             value=f.id,
             checked=(f.id in current or f.id in default_checked),
         )
-        for f in optional_features()
+        for f in all_features()
     ]
     selected = questionary.checkbox(
         "选择本项目需要的可选 Feature（空格选择/取消，回车确认）：",
@@ -82,7 +81,7 @@ def _prompt_gpu(current: bool) -> bool:
 
 def cmd_list(args: argparse.Namespace) -> int:
     console.print("[bold]Optional Features（按需选择）[/bold]")
-    for f in optional_features():
+    for f in all_features():
         console.print(f"  • {f.id}: {f.name} — {f.description}")
     return 0
 

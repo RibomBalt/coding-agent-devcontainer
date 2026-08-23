@@ -9,7 +9,7 @@ Dev container **features 分发**项目（不是应用）：产物是 GHCR 上�
 
 关键边界：**coding agent（opencode）是 feature，不烘焙进 base image**。agent 更新频繁，靠 feature 的 `postCreateCommand`（运行时 `pnpm add -g`）安装、`postStartCommand` 启动；`install.sh` 只做目录/脚本/git 身份。
 
-新增/删除 feature 要同步三处：`src/<id>/`、`coding_agent_devcontainer/features.py`（`_FEATURE_META`）、`constants.py`（`OPTIONAL_FEATURE_IDS`）。CLI 生成 devcontainer.json 的逻辑在 `render.py`。
+CLI 通过扫描 `src/*/devcontainer-feature.json` 自动发现 feature（`coding_agent_devcontainer/features.py`），该 JSON 同时是发布管线消费的唯一权威源。新增 feature 只需创建 `src/<id>/devcontainer-feature.json` + `install.sh`；若要注入 containerEnv/mounts/端口等 devcontainer.json 配置，在 `render.py` 加对应分支。CLI 生成 devcontainer.json 的逻辑在 `render.py`。
 
 ## 命令
 

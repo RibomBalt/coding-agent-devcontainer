@@ -14,7 +14,4 @@ BASE_IMAGE = os.environ.get(
     "DEVCONTAINER_BASE_IMAGE", f"{REGISTRY}/{OWNER}/{REPO}-base:latest"
 )
 
-# Feature ids that projects may opt into (selectable in the TUI).
-OPTIONAL_FEATURE_IDS = ["opencode", "playwright", "python-uv", "golang", "git-delta"]
-
 REMOTE_USER = "node"

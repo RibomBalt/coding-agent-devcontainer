@@ -2,39 +2,9 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from .constants import NAMESPACE, OPTIONAL_FEATURE_IDS
+from .constants import NAMESPACE
 
 SRC_DIR = Path(__file__).resolve().parent.parent / "src"
-
-# Human-facing metadata for the TUI. `version` is the major version referenced
-# from OCI (`:1`).
-_FEATURE_META = {
-    "opencode": {
-        "name": "OpenCode Coding Agent",
-        "description": "Install and launch the OpenCode coding agent",
-        "version": "1",
-    },
-    "playwright": {
-        "name": "Playwright (Chromium)",
-        "description": "Playwright Chromium system deps and browsers",
-        "version": "1",
-    },
-    "python-uv": {
-        "name": "Python & UV",
-        "description": "uv package manager + PyPI mirror",
-        "version": "1",
-    },
-    "golang": {
-        "name": "Go",
-        "description": "Go toolchain + GOPROXY",
-        "version": "1",
-    },
-    "git-delta": {
-        "name": "Git Delta",
-        "description": "Syntax-highlighted git diffs",
-        "version": "1",
-    },
-}
 
 
 @dataclass
@@ -50,32 +20,44 @@ class Feature:
         return f"{NAMESPACE}/{self.id}:{self.version}"
 
 
-def _read_version(feature_id: str) -> str:
-    """Read the semver version from the feature's devcontainer-feature.json, if present."""
-    path = SRC_DIR / feature_id / "devcontainer-feature.json"
-    if path.exists():
-        try:
-            data = json.loads(path.read_text())
-            return str(data.get("version", "1.0.0")).split(".")[0]
-        except (json.JSONDecodeError, OSError):
-            pass
-    return _FEATURE_META[feature_id]["version"]
+def _feature_dirs() -> list[Path]:
+    if not SRC_DIR.exists():
+        return []
+    return sorted(p for p in SRC_DIR.iterdir() if p.is_dir())
+
+
+def _load_feature(meta_path: Path) -> Feature | None:
+    """Load metadata from a feature's devcontainer-feature.json, if parseable."""
+    try:
+        data = json.loads(meta_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    feature_id = data.get("id")
+    if not feature_id:
+        return None
+    version = str(data.get("version", "1.0.0")).split(".")[0]
+    return Feature(
+        id=feature_id,
+        name=data.get("name", feature_id),
+        description=data.get("description", feature_id),
+        version=version,
+    )
 
 
 def all_features() -> list[Feature]:
-    return [
-        Feature(
-            id=feature_id,
-            name=meta["name"],
-            description=meta["description"],
-            version=_read_version(feature_id),
-        )
-        for feature_id, meta in _FEATURE_META.items()
-    ]
+    """Discover all features by scanning src/<id>/devcontainer-feature.json.
 
-
-def optional_features() -> list[Feature]:
-    return [f for f in all_features() if f.id in OPTIONAL_FEATURE_IDS]
+    The devcontainer-feature.json is the single source of truth: it's the same
+    definition consumed by the release pipeline (devcontainers/action).
+    """
+    found = []
+    for dir_path in _feature_dirs():
+        meta_path = dir_path / "devcontainer-feature.json"
+        if meta_path.exists():
+            feature = _load_feature(meta_path)
+            if feature is not None:
+                found.append(feature)
+    return sorted(found, key=lambda f: f.id)
 
 
 def get_feature(feature_id: str) -> Feature | None:

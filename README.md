@@ -230,7 +230,7 @@ coding-agent-devcontainer up -w /path/to/your/workspace -p 40022
 ├── coding_agent_devcontainer/   # CLI 工具（Python 包）
 │   ├── cli.py                   # init / update / list / up 命令
 │   ├── up.py                    # 容器启动（端口分配 + devcontainer up）
-│   ├── features.py              # Feature 元数据注册
+│   ├── features.py              # 自动发现 src/ 下的 feature 元数据
 │   ├── render.py                # devcontainer.json 渲染
 │   └── constants.py             # 注册表命名空间等常量
 ├── .github/workflows/           # CI：发布 feature + 构建 base image
@@ -256,7 +256,8 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 每个 feature 由 `devcontainer-feature.json`（元数据）和 `install.sh`（安装脚本）组成。feature 的 `install.sh` 以 **root** 运行，需以 `node` 用户执行的命令用 `su -l -s /bin/bash -c "..." node` 切换（`node` 用户由 base image 提供）。
 
 - 可选 feature 在容器创建时按需安装，均以 base image 为基础（无需 `installsAfter`）。
-- 新增 feature 时：在 `src/<feature-id>/` 下创建目录，并同步 `coding_agent_devcontainer/features.py` 与 `constants.py` 中的元数据。
+- CLI 通过扫描 `src/*/devcontainer-feature.json` 自动发现 feature（`features.py`），该 JSON 也是发布管线消费的唯一权威源。
+- 新增 feature 时：只需在 `src/<feature-id>/` 下创建 `devcontainer-feature.json`（元数据）+ `install.sh`，CLI 即自动发现；若要注入 containerEnv/mounts/端口等 devcontainer.json 配置，在 `render.py` 加对应分支。
 
 ### 发布与 CI
 
