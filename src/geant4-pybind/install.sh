@@ -11,4 +11,5 @@ cp "$FEATURE_DIR/download-geant4-pybind-data.sh" $USER_HOME/.local/bin/ && chmod
 apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libice6 \
+    libsm6 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
