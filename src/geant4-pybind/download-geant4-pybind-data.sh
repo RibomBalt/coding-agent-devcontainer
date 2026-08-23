@@ -12,7 +12,7 @@ $UV sync
 
 cat >main.py <<EOF
 from geant4_pybind import G4Version
-print("geant4-pybind version:", g4.G4Version)
+print("geant4-pybind version:", G4Version)
 EOF
 
 $UV run python main.py <<EOF
