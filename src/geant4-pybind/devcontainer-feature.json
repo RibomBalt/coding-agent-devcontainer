@@ -1,0 +1,21 @@
+{
+    "id": "geant4-pybind",
+    "version": "1.0.0",
+    "name": "Geant4 Pybind",
+    "description": "Installs geant4-pybind pip package and download ~/.geant4-pybind data source",
+    "options": {
+        "no_download": {
+            "type": "boolean",
+            "default": false,
+            "description": "Do not download geant4-pybind data source"
+        }
+    },
+    "mounts": [
+        {
+            "source": "${env:HOME}/.geant4_pybind",
+            "target": "/home/node/.geant4_pybind",
+            "type": "bind"
+        }
+    ],
+    "installsAfter": []
+}

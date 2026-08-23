@@ -12,9 +12,9 @@
     },
     "mounts": [
         {
-          "source": "devcontainer-uv-cache",
-          "target": "/home/node/.cache/uv",
-          "type": "volume"
+            "source": "devcontainer-uv-cache",
+            "target": "/home/node/.cache/uv",
+            "type": "volume"
         }
     ],
     "installsAfter": []

@@ -72,7 +72,6 @@ _MOUNTS = [
     "source=${env:HOME}/.ssh/id_ed25519.pub,target=/ssh-auth-key.pub,type=bind,readonly",
     "source=devcontainer-ssh-hostkey,target=/home/node/.ssh/host_ssh_key,type=volume",
     "source=devcontainer-pnpm-home,target=/usr/local/share/pnpm-global,type=volume",
-    "source=geant4-pybind-data,target=/home/node/.geant4_pybind,type=volume",
 ]
 
 _POST_START_COMMAND = "/home/node/.local/bin/init-ssh.sh"
