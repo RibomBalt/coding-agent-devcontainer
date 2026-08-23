@@ -9,10 +9,15 @@ PYTHON="${PYTHON:-python3}"
 mkdir -p /tmp/geant4-pybind-test
 mkdir -p ~/.geant4_pybind
 cd /tmp/geant4-pybind-test
-${PYTHON} -m venv .venv
-${PYTHON} -m pip install geant4-pybind
+uv init
+uv add geant4-pybind
+uv sync
 
 cat >main.py <<EOF
 import geant4_pybind as g4
 print("geant4-pybind version:", g4.__version__)
 EOF
+uv run python main.py
+
+cd /tmp
+rm -rf /tmp/geant4-pybind-test

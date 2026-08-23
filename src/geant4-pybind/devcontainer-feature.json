@@ -1,6 +1,6 @@
 {
     "id": "geant4-pybind",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "name": "Geant4 Pybind",
     "description": "Installs geant4-pybind pip package and download ~/.geant4-pybind data source",
     "options": {
