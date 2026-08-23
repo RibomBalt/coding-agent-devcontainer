@@ -27,8 +27,18 @@ jobs:
 
   build-base-image:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_TAG: "ghcr.io/${GITHUB_REPOSITORY,,}-base:${{ github.ref_name }}"
+      IMAGE_LATEST: "ghcr.io/${GITHUB_REPOSITORY,,}-base:latest"
+      SOURCE_HASH_LABEL: "devcontainer.base-source-hash"
     steps:
       - uses: actions/checkout@v4
+
+      - name: Compute image source hash
+        id: src
+        run: |
+          HASH=$(git ls-files image/ | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+          echo "hash=${HASH}" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -37,12 +47,30 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push base image
+      - name: Check if base image source changed
+        id: check
         run: |
-          OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.event.repository.name }}"
-          IMAGE_TAG="ghcr.io/${OWNER,,}/${REPO,,}-base:${{ github.ref_name }}"
-          IMAGE_LATEST="ghcr.io/${OWNER,,}/${REPO,,}-base:latest"
-          docker build -f image/Dockerfile-base -t "${IMAGE_TAG}" -t "${IMAGE_LATEST}" image
-          docker push "${IMAGE_TAG}"
-          docker push "${IMAGE_LATEST}"
+          if docker manifest inspect "$IMAGE_LATEST" >/dev/null 2>&1; then
+            docker pull "$IMAGE_LATEST"
+            PREV=$(docker image inspect --format "{{index .Config.Labels \"${SOURCE_HASH_LABEL}\"}}" "$IMAGE_LATEST" 2>/dev/null || true)
+            if [ -n "$PREV" ] && [ "$PREV" = "${{ steps.src.outputs.hash }}" ]; then
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push base image
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          docker build -f image/Dockerfile-base \
+            --label "${SOURCE_HASH_LABEL}=${{ steps.src.outputs.hash }}" \
+            -t "$IMAGE_TAG" -t "$IMAGE_LATEST" image
+          docker push "$IMAGE_TAG"
+          docker push "$IMAGE_LATEST"
+
+      - name: Retag latest as release tag
+        if: steps.check.outputs.changed == 'false'
+        run: |
+          docker tag "$IMAGE_LATEST" "$IMAGE_TAG"
+          docker push "$IMAGE_TAG"
