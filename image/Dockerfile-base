@@ -121,7 +121,9 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 # Install Python UV
 COPY install-python-uv.sh /tmp
 ENV PATH="$HOME/.local/bin:$PATH"
-RUN chmod +x /tmp/install-python-uv.sh && /tmp/install-python-uv.sh
+RUN cp /tmp/install-python-uv.sh /home/node/.local/bin/install-python-uv.sh && \
+    chmod +x /home/node/.local/bin/install-python-uv.sh && \
+    /home/node/.local/bin/install-python-uv.sh
 
 # Copy and set up firewall script / openssh access
 COPY init-firewall.sh /usr/local/bin/
