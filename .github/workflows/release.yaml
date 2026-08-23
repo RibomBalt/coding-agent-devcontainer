@@ -27,10 +27,6 @@ jobs:
 
   build-base-image:
     runs-on: ubuntu-latest
-    env:
-      IMAGE_TAG: "ghcr.io/${GITHUB_REPOSITORY,,}-base:${{ github.ref_name }}"
-      IMAGE_LATEST: "ghcr.io/${GITHUB_REPOSITORY,,}-base:latest"
-      SOURCE_HASH_LABEL: "devcontainer.base-source-hash"
     steps:
       - uses: actions/checkout@v4
 
@@ -50,6 +46,10 @@ jobs:
       - name: Check if base image source changed
         id: check
         run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          IMAGE_LATEST="ghcr.io/${OWNER,,}/${REPO,,}-base:latest"
+          SOURCE_HASH_LABEL="devcontainer.base-source-hash"
           if docker manifest inspect "$IMAGE_LATEST" >/dev/null 2>&1; then
             docker pull "$IMAGE_LATEST"
             PREV=$(docker image inspect --format "{{index .Config.Labels \"${SOURCE_HASH_LABEL}\"}}" "$IMAGE_LATEST" 2>/dev/null || true)
@@ -63,6 +63,11 @@ jobs:
       - name: Build and push base image
         if: steps.check.outputs.changed == 'true'
         run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          IMAGE_TAG="ghcr.io/${OWNER,,}/${REPO,,}-base:${{ github.ref_name }}"
+          IMAGE_LATEST="ghcr.io/${OWNER,,}/${REPO,,}-base:latest"
+          SOURCE_HASH_LABEL="devcontainer.base-source-hash"
           docker build -f image/Dockerfile-base \
             --label "${SOURCE_HASH_LABEL}=${{ steps.src.outputs.hash }}" \
             -t "$IMAGE_TAG" -t "$IMAGE_LATEST" image
@@ -72,5 +77,9 @@ jobs:
       - name: Retag latest as release tag
         if: steps.check.outputs.changed == 'false'
         run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          IMAGE_TAG="ghcr.io/${OWNER,,}/${REPO,,}-base:${{ github.ref_name }}"
+          IMAGE_LATEST="ghcr.io/${OWNER,,}/${REPO,,}-base:latest"
           docker tag "$IMAGE_LATEST" "$IMAGE_TAG"
           docker push "$IMAGE_TAG"
