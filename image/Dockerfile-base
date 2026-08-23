@@ -120,7 +120,7 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 
 # Install Python UV
 COPY install-python-uv.sh /tmp
-ENV PATH="$HOME/.local/bin:$PATH"
+ENV PATH="/home/node/.local/bin:$PATH"
 RUN mkdir -p /home/node/.local/bin && \
     cp /tmp/install-python-uv.sh /home/node/.local/bin/install-python-uv.sh && \
     chmod +x /home/node/.local/bin/install-python-uv.sh && \
