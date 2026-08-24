@@ -17,9 +17,10 @@ CLI 通过扫描 `src/*/devcontainer-feature.json` 自动发现 feature（`codin
 - 单测一个 feature：`devcontainer features test -p . -i <base-image> -u node -f <feature>`（需 Docker daemon 运行；`-i` 必须是含 node 用户/wget 的 base image，默认 `ubuntu:focal` 会失败）。
 - 打包验证（不发布）：`devcontainer features package -f src`（生成 `output/`，已 gitignore）。
 - lint：`uv run ruff check coding_agent_devcontainer/ scripts/`。
+- 单测（Python，pytest）：`uv run pytest`（收集 `test/cli/`，见 `pyproject.toml` 的 `testpaths`）。
 - 本地构建 base image：`./scripts/01-build-image.sh [name]`（等价 `docker build -f image/Dockerfile-base image`，需传 `HTTP_PROXY`/`HTTPS_PROXY` 给 zsh-in-docker 下载）。
 - 单 feature 测试：`./scripts/03-feature-test.sh <feature> [image]`（基于 `01-build-image.sh` 构建的镜像，默认 `opencode-sandbox-ribom:latest`；等价 `devcontainer features test -p . -i <image> -u node -f <feature>`）。
-  - 测试脚本放仓库根 `test/<feature-id>/test.sh`（与 `src/` 平级，**不是** `src/<id>/test/`），以 remote user（node）运行。`devcontainer features test` 会执行该 feature 的 `postCreateCommand`。现有：`test/geant4-pybind/test.sh`（校验 `~/.geant4_pybind` 数据目录非空 + `from geant4_pybind import G4Version` 10s 内不超时）。
+  - 测试脚本放仓库根 `test/<feature-id>/test.sh`（与 `src/` 平级，**不是** `src/<id>/test/`）；CLI 的 Python 单测在同级 `test/cli/`。feature 测试以 remote user（node）运行。`devcontainer features test` 会执行该 feature 的 `postCreateCommand`。现有：`test/geant4-pybind/test.sh`（校验 `~/.geant4_pybind` 数据目录非空 + `from geant4_pybind import G4Version` 10s 内不超时）。
 
 ## 关键坑（容易踩）
 

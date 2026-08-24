@@ -9,6 +9,8 @@ from rich.console import Console
 
 console = Console()
 
+_GLOBAL_ENV_FILE = Path.home() / ".config" / "coding-agent-devcontainer" / ".env"
+
 DEVCONTAINER_CMD = [
     ["devcontainer"],
     ["npx", "@devcontainers/cli"],
@@ -53,6 +55,50 @@ def allocate_ports(ssh_port: int) -> tuple[int, int] | None:
     return None
 
 
+def load_env_file(path: Path) -> dict[str, str]:
+    """Parse a simple KEY=VALUE .env file, ignoring blanks and comments.
+
+    Returns an empty dict if the file does not exist.
+    """
+    if not path.exists():
+        return {}
+    env: dict[str, str] = {}
+    for raw in path.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        key, sep, value = line.partition("=")
+        key = key.strip()
+        if sep and key:
+            env[key] = value.strip()
+    return env
+
+
+def resolve_env(
+    workspace_path: str | Path,
+    base_env: dict[str, str],
+    global_env: Path = _GLOBAL_ENV_FILE,
+) -> dict[str, str]:
+    """Merge .env files into `base_env` for the devcontainer subprocess.
+
+    Precedence (low to high): global file < project file < `base_env` (shell
+    exports). Keys already present in `base_env` are never overwritten.
+
+    Project file location: ``<workspace>/.devcontainer/.env``.
+    Global file location: ``~/.config/coding-agent-devcontainer/.env``.
+    """
+    workspace = Path(workspace_path)
+    project_env = load_env_file(workspace / ".devcontainer" / ".env")
+    merged = load_env_file(global_env)
+
+    result = base_env.copy()
+    for source in (merged, project_env):
+        for key, value in source.items():
+            if key not in base_env:
+                result[key] = value
+    return result
+
+
 def workspace_up(cmd: list[str], workspace_path: str, ssh_port: int) -> int:
     """Start the dev container for the given workspace.
 
@@ -67,12 +113,11 @@ def workspace_up(cmd: list[str], workspace_path: str, ssh_port: int) -> int:
     ssh_final_port, opencode_final_port = ports
     config = Path(workspace_path) / ".devcontainer" / "devcontainer.json"
 
-    env = os.environ.copy()
+    env = resolve_env(workspace_path, os.environ.copy())
     env["DEVCONTAINER_SSH_PORT"] = str(ssh_final_port)
     env["DEVCONTAINER_OPCD_PORT"] = str(opencode_final_port)
     console.print(
-        f"Starting workspace with SSH port {ssh_final_port} "
-        f"and Opencode port {opencode_final_port}"
+        f"Starting workspace with SSH port {ssh_final_port} and Opencode port {opencode_final_port}"
     )
 
     return subprocess.run(
