@@ -16,8 +16,8 @@
 │    + shell/SSH/配置 ─┘  base image                     │
 │                                                         │
 │  src/                     发布 tgz ───► GHCR           │
-│    opencode/  playwright/  python-uv/                  │
-│    golang/  git-delta/                                 │
+│    opencode/  codex/  playwright/                      │
+│    python-uv/  golang/  git-delta/                     │
 │                                                         │
 │  coding_agent_devcontainer/  CLI 工具                   │
 │    init / update 交互式生成 devcontainer.json           │
@@ -37,6 +37,7 @@
 | Feature | 说明 |
 |---------|------|
 | `opencode` | OpenCode coding agent（默认勾选，安装 + 启动 Web UI） |
+| `codex` | OpenAI Codex CLI coding agent（安装） |
 | `playwright` | Playwright Chromium 系统依赖 + 浏览器 |
 | `python-uv` | uv 包管理器 + PyPI 镜像 |
 | `golang` | Go 工具链 + GOPROXY |
@@ -72,6 +73,7 @@ CLI 会在目标项目生成 `.devcontainer/devcontainer.json`，引用 base ima
 | Node.js | 24.19.0 |
 | Python | 可通过 uv 安装指定版本 |
 | OpenCode | `opencode` CLI（最新版），自动启动 Web UI（`opencode serve`） |
+| Codex | `codex` CLI（最新版，`@openai/codex`） |
 
 ### 包管理器与镜像
 
@@ -201,6 +203,7 @@ coding-agent-devcontainer up -w /path/to/your/workspace -p 40022
 | `opencode-config` * | `/home/node/.config/opencode` | OpenCode 配置 |
 | `opencode-local-share` * | `/home/node/.local/share/opencode` | OpenCode 本地数据 |
 | `devcontainer-opencode-cache` * | `/home/node/.cache/opencode` | OpenCode 缓存 |
+| `codex-config` * | `/home/node/.codex` | Codex 配置与数据 |
 | `devcontainer-ssh-hostkey` | `/home/node/.ssh/host_ssh_key` | SSH Host Key |
 | `devcontainer-uv-cache` * | `/home/node/.cache/uv` | UV 包管理器缓存 |
 | `devcontainer-pnpm-home` | `/usr/local/share/pnpm-global` | pnpm 全局包及 store |
@@ -222,6 +225,7 @@ coding-agent-devcontainer up -w /path/to/your/workspace -p 40022
 │   └── init-ssh.sh              # SSH 服务初始化
 ├── src/                         # Dev Container Feature 源码（可选 feature，按需组合）
 │   ├── opencode/                # OpenCode coding agent
+│   ├── codex/                   # OpenAI Codex CLI coding agent
 │   ├── playwright/              # Playwright Chromium
 │   ├── python-uv/               # uv + PyPI 镜像
 │   ├── golang/                  # Go 工具链

@@ -5,9 +5,9 @@ Dev container **features 分发**项目（不是应用）：产物是 GHCR 上�
 ## 架构：两层
 
 - **base image** — `image/Dockerfile-base`（`debian:13-slim` + 系统包 + Node.js + pnpm + shell + SSH + 通用配置），所有项目共用，`docker build` 构建。
-- **optional features** — `src/<id>/`（`devcontainer-feature.json` + `install.sh`），按项目选择。当前：`opencode`、`playwright`、`python-uv`、`golang`、`git-delta`、`geant4-pybind`。
+- **optional features** — `src/<id>/`（`devcontainer-feature.json` + `install.sh`），按项目选择。当前：`opencode`、`codex`、`playwright`、`python-uv`、`golang`、`git-delta`、`geant4-pybind`。
 
-关键边界：**coding agent（opencode）是 feature，不烘焙进 base image**。agent 更新频繁，靠 feature 的 `postCreateCommand`（运行时 `pnpm add -g`）安装、`postStartCommand` 启动；`install.sh` 只做目录/脚本/git 身份。
+关键边界：**coding agent（opencode、codex）是 feature，不烘焙进 base image**。agent 更新频繁，靠 feature 的 `postCreateCommand`（运行时 `pnpm add -g`）安装、`postStartCommand` 启动；`install.sh` 只做目录/脚本/git 身份。注意 `@openai/codex` 二进制通过 optionalDependencies（`@openai/codex-linux-x64` 等）提供、无 postinstall，pnpm 全局安装可行且 codex.js 内置 pnpm 布局检测，无需 `--allow-build`（与 opencode 不同）。
 
 CLI 通过扫描 `src/*/devcontainer-feature.json` 自动发现 feature（`coding_agent_devcontainer/features.py`），该 JSON 同时是发布管线消费的唯一权威源。新增 feature 只需创建 `src/<id>/devcontainer-feature.json` + `install.sh`；若要注入 containerEnv/mounts/端口等 devcontainer.json 配置，在 `render.py` 加对应分支。CLI 生成 devcontainer.json 的逻辑在 `render.py`。
 
@@ -20,7 +20,7 @@ CLI 通过扫描 `src/*/devcontainer-feature.json` 自动发现 feature（`codin
 - 单测（Python，pytest）：`uv run pytest`（收集 `test/cli/`，见 `pyproject.toml` 的 `testpaths`）。
 - 本地构建 base image：`./scripts/01-build-image.sh [name]`（等价 `docker build -f image/Dockerfile-base image`，需传 `HTTP_PROXY`/`HTTPS_PROXY` 给 zsh-in-docker 下载）。
 - 单 feature 测试：`./scripts/03-feature-test.sh <feature> [image]`（基于 `01-build-image.sh` 构建的镜像，默认 `opencode-sandbox-ribom:latest`；等价 `devcontainer features test -p . -i <image> -u node -f <feature>`）。
-  - 测试脚本放仓库根 `test/<feature-id>/test.sh`（与 `src/` 平级，**不是** `src/<id>/test/`）；CLI 的 Python 单测在同级 `test/cli/`。feature 测试以 remote user（node）运行。`devcontainer features test` 会执行该 feature 的 `postCreateCommand`。现有：`test/geant4-pybind/test.sh`（校验 `~/.geant4_pybind` 数据目录非空 + `from geant4_pybind import G4Version` 10s 内不超时）。
+  - 测试脚本放仓库根 `test/<feature-id>/test.sh`（与 `src/` 平级，**不是** `src/<id>/test/`）；CLI 的 Python 单测在同级 `test/cli/`。feature 测试以 remote user（node）运行。`devcontainer features test` 会执行该 feature 的 `postCreateCommand`。现有：`test/opencode/test.sh`（校验数据目录 + git 身份）、`test/codex/test.sh`（校验 `~/.codex` 目录 + `codex` 命令 + git 身份）、`test/geant4-pybind/test.sh`（校验 `~/.geant4_pybind` 数据目录非空 + `from geant4_pybind import G4Version` 10s 内不超时）。
 
 ## 关键坑（容易踩）
 
@@ -43,4 +43,4 @@ CLI 通过扫描 `src/*/devcontainer-feature.json` 自动发现 feature（`codin
 
 - `scripts/02-devcontainer-up.py` 是**兼容入口**（转发到 `coding-agent-devcontainer up`），勿删；`scripts/01-build-image.sh` 是 base image 构建入口；`scripts/03-feature-test.sh` 是单 feature 本地测试入口。
 - 已删除（勿恢复）：`gpu/`、`nogpu/`、`scripts/03-gpus-from-nogpus.py`、`image/Dockerfile`（旧 node:20-slim 全量版）、`image/start-opencode-web.py`（已移入 `src/opencode/`）。
-- git 身份：base image 写通用 `devcontainer@localhost`，opencode feature 的 install.sh 覆盖为 `opencode`。
+- git 身份：base image 写通用 `devcontainer@localhost`，opencode feature 的 install.sh 覆盖为 `opencode`，codex feature 的 install.sh 覆盖为 `codex`（`codex@openai.com`）。
