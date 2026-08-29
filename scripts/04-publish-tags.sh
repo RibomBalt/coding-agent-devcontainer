@@ -65,11 +65,11 @@ git push "${REMOTE}" "${VERSION}"
 REMOTE_URL="$(git remote get-url "${REMOTE}")"
 if [[ "${REMOTE_URL}" =~ ^git@github\.com:([^/]+)/([^/]+)(\.git)?$ ]]; then
     OWNER="${BASH_REMATCH[1]}"
-    REPO="${BASH_REMATCH[2]}"
+    REPO="${BASH_REMATCH[2]%.git}"
     echo ">> Actions: https://github.com/${OWNER}/${REPO}/actions"
 elif [[ "${REMOTE_URL}" =~ ^https://github\.com/([^/]+)/([^/]+)(\.git)?$ ]]; then
     OWNER="${BASH_REMATCH[1]}"
-    REPO="${BASH_REMATCH[2]}"
+    REPO="${BASH_REMATCH[2]%.git}"
     echo ">> Actions: https://github.com/${OWNER}/${REPO}/actions"
 fi
 
