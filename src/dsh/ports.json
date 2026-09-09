@@ -1,0 +1,9 @@
+{
+    "ports": [
+        {
+            "env": "DEVCONTAINER_DSH_PORT",
+            "containerPort": 5000,
+            "defaultHostPort": 40097
+        }
+    ]
+}

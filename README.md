@@ -16,7 +16,7 @@
 │    + shell/SSH/配置 ─┘  base image                     │
 │                                                         │
 │  src/                     发布 tgz ───► GHCR           │
-│    opencode/  codex/  playwright/                      │
+│    opencode/  codex/  dsh/  playwright/                │
 │    python-uv/  golang/  git-delta/                     │
 │                                                         │
 │  coding_agent_devcontainer/  CLI 工具                   │
@@ -38,6 +38,7 @@
 |---------|------|
 | `opencode` | OpenCode coding agent（默认勾选，安装 + 启动 Web UI） |
 | `codex` | OpenAI Codex CLI coding agent（安装） |
+| `dsh` | DeepSeek Harness（安装 + 启动 Web UI） |
 | `playwright` | Playwright Chromium 系统依赖 + 浏览器 |
 | `python-uv` | uv 包管理器 + PyPI 镜像 |
 | `golang` | Go 工具链 + GOPROXY |
@@ -297,6 +298,7 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 - **`runArgs`**：`NET_ADMIN` + `NET_RAW` 权限（供 iptables 使用）
 - **`mounts`**：SSH 公钥只读挂载、持久化 Volume（见上文数据持久化表）
 - **`appPort`**：始终映射基础镜像的 `${localEnv:DEVCONTAINER_SSH_PORT}` → 容器 `2222`（SSH），并按选中的 feature 追加其 `ports.json` 中声明的端口（当前 OpenCode 为 `${localEnv:DEVCONTAINER_OPCD_PORT}` → 容器 `4096`）
+- 选中 `dsh` 时，DSH Web UI 在容器内 loopback 的 `5001` 端口运行，由 TCP relay 监听容器 `5000` 并转发到 `5001`；`appPort` 只映射 `5000`
 - **`containerEnv`**：`NODE_OPTIONS`（4GB 堆内存）、代理环境变量、`POWERLEVEL9K_DISABLE_GITSTATUS`
 - **`remoteEnv`**：OpenCode Web UI 认证（`OPENCODE_SERVER_USERNAME` / `OPENCODE_SERVER_PASSWORD`）与端口（`DEVCONTAINER_OPCD_PORT`）
 - **`postStartCommand`**：`init-ssh.sh`（启动 SSH；OpenCode Web 启动由 `opencode` feature 的 postStartCommand 负责）
@@ -338,6 +340,12 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 - 检查环境变量，未设置时自动生成随机密码（`secrets.token_urlsafe(32)`）
 - 执行 `opencode serve --port 4096 --hostname 0.0.0.0`（守护进程方式，分离会话）
 - 输出访问地址和连接命令到标准输出
+
+### DeepSeek Harness Web 启动脚本 (`src/dsh/start-dsh-web.py`)
+
+- 使用 `dsh web --host 127.0.0.1 --port 5001` 启动 DSH Web UI
+- 使用 Python 标准库 TCP relay 将容器 `5000` 转发到 `127.0.0.1:5001`
+- `ports.json` 将容器 `5000` 声明为 DSH feature 的对外端口
 
 ## 注意事项
 
