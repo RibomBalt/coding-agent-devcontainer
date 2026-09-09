@@ -1,6 +1,6 @@
 {
     "id": "opencode",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "OpenCode Coding Agent",
     "description": "Installs and launches the OpenCode coding agent.",
     "options": {
