@@ -1,8 +1,11 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from coding_agent_devcontainer import features
 from coding_agent_devcontainer.render import render_devcontainer
+from coding_agent_devcontainer.ports import load_feature_ports
 from coding_agent_devcontainer.up import allocate_ports, workspace_up
 
 
@@ -64,6 +67,59 @@ def test_allocate_ports_scans_upward_for_requested_number(monkeypatch) -> None:
     )
 
     assert allocate_ports(40022, 3) == (40022, 40024, 40027)
+
+
+def test_render_rejects_duplicate_port_environment_names(tmp_path: Path, monkeypatch) -> None:
+    _feature(tmp_path, "first")
+    _feature(tmp_path, "second")
+    for feature_id in ("first", "second"):
+        _write(
+            tmp_path / feature_id / "ports.json",
+            json.dumps(
+                {
+                    "ports": [
+                        {
+                            "env": "DEVCONTAINER_SHARED_PORT",
+                            "containerPort": 8123,
+                            "defaultHostPort": 48123,
+                        }
+                    ]
+                }
+            ),
+        )
+    monkeypatch.setattr(features, "SRC_DIR", tmp_path)
+
+    with pytest.raises(ValueError, match="duplicate"):
+        render_devcontainer(["first", "second"], gpu=False)
+
+
+def test_load_feature_ports_rejects_invalid_port_metadata(tmp_path: Path) -> None:
+    ports_path = tmp_path / "ports.json"
+    _write(
+        ports_path,
+        json.dumps(
+            {
+                "ports": [
+                    {
+                        "env": "DEVCONTAINER_INVALID_PORT",
+                        "containerPort": 0,
+                        "defaultHostPort": 70000,
+                    }
+                ]
+            }
+        ),
+    )
+
+    with pytest.raises(ValueError, match="1..65535"):
+        load_feature_ports(ports_path)
+
+
+def test_load_feature_ports_rejects_non_object_metadata(tmp_path: Path) -> None:
+    ports_path = tmp_path / "ports.json"
+    _write(ports_path, "[]")
+
+    with pytest.raises(ValueError, match="top-level object"):
+        load_feature_ports(ports_path)
 
 
 def test_workspace_up_injects_every_rendered_port(monkeypatch, tmp_path: Path) -> None:

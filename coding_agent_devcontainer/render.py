@@ -80,6 +80,11 @@ def _port_mappings(selected: list[str]):
         feature = get_feature(feature_id)
         if feature is not None:
             mappings.extend(feature.ports)
+    seen_envs = set()
+    for mapping in mappings:
+        if mapping.env in seen_envs:
+            raise ValueError(f"duplicate port environment name: {mapping.env}")
+        seen_envs.add(mapping.env)
     return mappings
 
 

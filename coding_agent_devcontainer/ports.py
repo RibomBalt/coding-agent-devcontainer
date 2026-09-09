@@ -22,11 +22,14 @@ def load_feature_ports(path: Path) -> tuple[PortMapping, ...]:
         return ()
 
     data = json.loads(path.read_text())
+    if not isinstance(data, dict):
+        raise ValueError(f"Invalid ports configuration in {path}: top-level object required")
     raw_ports = data.get("ports", [])
     if not isinstance(raw_ports, list):
         raise ValueError(f"Invalid ports configuration in {path}: ports must be a list")
 
     mappings = []
+    envs = set()
     for raw_port in raw_ports:
         if not isinstance(raw_port, dict):
             raise ValueError(f"Invalid port entry in {path}: expected an object")
@@ -42,5 +45,12 @@ def load_feature_ports(path: Path) -> tuple[PortMapping, ...]:
             or isinstance(default_host_port, bool)
         ):
             raise ValueError(f"Invalid port entry in {path}: {raw_port!r}")
+        if not 1 <= container_port <= 65535 or not 1 <= default_host_port <= 65535:
+            raise ValueError(
+                f"Invalid port entry in {path}: ports must be in the range 1..65535"
+            )
+        if env in envs:
+            raise ValueError(f"Invalid ports configuration in {path}: duplicate env {env!r}")
+        envs.add(env)
         mappings.append(PortMapping(env, container_port, default_host_port))
     return tuple(mappings)
