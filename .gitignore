@@ -19,3 +19,6 @@ tmp/
 output/
 
 .devcontainer
+
+# Git worktrees
+.worktrees/
