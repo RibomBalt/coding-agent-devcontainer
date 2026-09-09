@@ -1,5 +1,7 @@
 import errno
+import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -41,18 +43,40 @@ def check_port_availability(port: int) -> bool:
         raise
 
 
-def allocate_ports(ssh_port: int) -> tuple[int, int] | None:
-    """Find two consecutive free ports starting from `ssh_port`.
+def allocate_ports(start_port: int, count: int = 2) -> tuple[int, ...] | None:
+    """Find `count` free ports by scanning upward from `start_port`.
 
-    Returns (ssh_port, opencode_port) or None if not found.
+    Returns the allocated ports in scan order or None if they cannot be found.
     """
+    if count == 0:
+        return ()
+    if count < 0:
+        raise ValueError("count must not be negative")
+
     available: list[int] = []
-    for port in range(ssh_port, 65536):
+    for port in range(start_port, 65536):
         if check_port_availability(port):
             available.append(port)
-            if len(available) == 2:
-                return available[0], available[1]
+            if len(available) == count:
+                return tuple(available)
     return None
+
+
+_LOCAL_ENV_PORT = re.compile(r"^\$\{localEnv:([^}:]+)(?::[^}]*)?\}:\d+$")
+
+
+def _port_env_names(config: Path) -> list[str]:
+    data = json.loads(config.read_text())
+    app_ports = data.get("appPort") or []
+    if isinstance(app_ports, str):
+        app_ports = [app_ports]
+    return [
+        match.group(1)
+        for app_port in app_ports
+        if isinstance(app_port, str)
+        for match in [_LOCAL_ENV_PORT.match(app_port)]
+        if match is not None
+    ]
 
 
 def load_env_file(path: Path) -> dict[str, str]:
@@ -102,23 +126,21 @@ def resolve_env(
 def workspace_up(cmd: list[str], workspace_path: str, ssh_port: int) -> int:
     """Start the dev container for the given workspace.
 
-    Injects DEVCONTAINER_SSH_PORT / DEVCONTAINER_OPCD_PORT with two dynamically
+    Injects environment variables for every generated appPort with dynamically
     allocated ports, then runs `devcontainer up`.
     """
-    ports = allocate_ports(ssh_port)
+    config = Path(workspace_path) / ".devcontainer" / "devcontainer.json"
+    port_env_names = _port_env_names(config)
+    ports = allocate_ports(ssh_port, len(port_env_names))
     if ports is None:
         console.print(f"[red]No available port found for SSH on {ssh_port}-65535[/red]")
         return 1
 
-    ssh_final_port, opencode_final_port = ports
-    config = Path(workspace_path) / ".devcontainer" / "devcontainer.json"
-
     env = resolve_env(workspace_path, os.environ.copy())
-    env["DEVCONTAINER_SSH_PORT"] = str(ssh_final_port)
-    env["DEVCONTAINER_OPCD_PORT"] = str(opencode_final_port)
-    console.print(
-        f"Starting workspace with SSH port {ssh_final_port} and Opencode port {opencode_final_port}"
-    )
+    for env_name, port in zip(port_env_names, ports):
+        env[env_name] = str(port)
+    assignments = ", ".join(f"{name}={port}" for name, port in zip(port_env_names, ports))
+    console.print(f"Starting workspace with ports: {assignments or '(none)'}")
 
     return subprocess.run(
         cmd + ["up", "--workspace-folder", workspace_path, "--config", str(config)],

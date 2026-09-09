@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .constants import NAMESPACE
+from .ports import PortMapping, load_feature_ports
 
 SRC_DIR = Path(__file__).resolve().parent.parent / "src"
 
@@ -13,6 +14,7 @@ class Feature:
     name: str
     description: str
     version: str
+    ports: tuple[PortMapping, ...] = ()
 
     @property
     def reference(self) -> str:
@@ -41,6 +43,7 @@ def _load_feature(meta_path: Path) -> Feature | None:
         name=data.get("name", feature_id),
         description=data.get("description", feature_id),
         version=version,
+        ports=load_feature_ports(meta_path.parent / "ports.json"),
     )
 
 

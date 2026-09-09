@@ -1,0 +1,9 @@
+{
+    "ports": [
+        {
+            "env": "DEVCONTAINER_OPCD_PORT",
+            "containerPort": 4096,
+            "defaultHostPort": 40096
+        }
+    ]
+}

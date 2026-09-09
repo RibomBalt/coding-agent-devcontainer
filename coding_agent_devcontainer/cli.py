@@ -225,7 +225,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="ssh_port",
         type=int,
         default=40022,
-        help="SSH 起始端口（默认 40022，自动寻找连续两个空闲端口）",
+        help="宿主机端口分配起始值（默认 40022，按需向上寻找空闲端口）",
     )
     up_parser.set_defaults(func=cmd_up)
 

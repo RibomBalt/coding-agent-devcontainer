@@ -1,5 +1,6 @@
 from .constants import BASE_IMAGE
 from .features import get_feature
+from .ports import BASE_PORTS
 
 _COMMON_ENV = {
     "NODE_OPTIONS": "--max-old-space-size=4096",
@@ -62,11 +63,6 @@ _CUSTOMIZATIONS = {
     }
 }
 
-_APP_PORT = [
-    "${localEnv:DEVCONTAINER_SSH_PORT:40022}:2222",
-    "${localEnv:DEVCONTAINER_OPCD_PORT:40096}:4096",
-]
-
 _MOUNTS = [
     "source=devcontainer-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
     "source=${env:HOME}/.ssh/id_ed25519.pub,target=/ssh-auth-key.pub,type=bind,readonly",
@@ -76,6 +72,22 @@ _MOUNTS = [
 ]
 
 _POST_START_COMMAND = "/home/node/.local/bin/init-ssh.sh"
+
+
+def _port_mappings(selected: list[str]):
+    mappings = list(BASE_PORTS)
+    for feature_id in selected:
+        feature = get_feature(feature_id)
+        if feature is not None:
+            mappings.extend(feature.ports)
+    return mappings
+
+
+def _remote_env(selected: list[str]) -> dict[str, str]:
+    remote_env = dict(_REMOTE_ENV)
+    if "opencode" not in selected:
+        remote_env.pop("DEVCONTAINER_OPCD_PORT", None)
+    return remote_env
 
 
 def render_devcontainer(selected: list[str], gpu: bool) -> dict:
@@ -111,11 +123,11 @@ def render_devcontainer(selected: list[str], gpu: bool) -> dict:
         "features": features,
         "runArgs": run_args,
         "customizations": _CUSTOMIZATIONS,
-        "appPort": _APP_PORT,
+        "appPort": [mapping.render() for mapping in _port_mappings(selected)],
         "remoteUser": "node",
         "mounts": _MOUNTS,
         "containerEnv": container_env,
-        "remoteEnv": dict(_REMOTE_ENV),
+        "remoteEnv": _remote_env(selected),
         "workspaceMount": workspace_mount,
         "workspaceFolder": "/workspace",
         "postStartCommand": _POST_START_COMMAND,

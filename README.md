@@ -144,10 +144,10 @@ coding-agent-devcontainer init -w /path/to/your/project --non-interactive \
 ### 启动容器
 
 ```bash
-# 启动（自动分配 SSH / OpenCode 端口）
+# 启动（自动分配容器所需端口）
 coding-agent-devcontainer up -w /path/to/your/workspace
 
-# 指定 SSH 起始端口（默认 40022，自动寻找连续两个空闲端口）
+# 指定宿主机端口分配起始值（默认 40022，按需向上寻找空闲端口）
 coding-agent-devcontainer up -w /path/to/your/workspace -p 2222
 ```
 
@@ -169,7 +169,7 @@ ssh -p <宿主机映射端口> -o StrictHostKeyChecking=no node@localhost
 
 ### OpenCode Web UI
 
-容器启动后自动运行 `opencode serve`，监听容器内 `4096` 端口。外部映射端口通过 `coding-agent-devcontainer up` 动态分配：从 SSH 起始端口向上扫描**连续两个**空闲端口，第一个用于 SSH，第二个用于 OpenCode Web UI（即启动输出的第二个端口）。若直接通过 VSCode 使用 devcontainer（不走 CLI），则回退为 `devcontainer.json` 中的默认值 `40096`。
+容器启动后若选择了 `opencode` feature，会自动运行 `opencode serve`，监听容器内 `4096` 端口。外部映射端口通过 `coding-agent-devcontainer up` 动态分配：从起始端口向上扫描，为生成配置中的每个端口映射寻找一个空闲宿主机端口。若直接通过 VSCode 使用 devcontainer（不走 CLI），则回退为 `devcontainer.json` 中的默认值 `40096`。未选择 `opencode` feature 时，不生成 `4096` 的端口映射。
 
 ```bash
 # 浏览器访问（使用脚本输出的 opencode 端口）
@@ -261,7 +261,23 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 
 - 可选 feature 在容器创建时按需安装，均以 base image 为基础（无需 `installsAfter`）。
 - CLI 通过扫描 `src/*/devcontainer-feature.json` 自动发现 feature（`features.py`），该 JSON 也是发布管线消费的唯一权威源。
-- 新增 feature 时：只需在 `src/<feature-id>/` 下创建 `devcontainer-feature.json`（元数据）+ `install.sh`，CLI 即自动发现；若要注入 containerEnv/mounts/端口等 devcontainer.json 配置，在 `render.py` 加对应分支。
+- 新增 feature 时：只需在 `src/<feature-id>/` 下创建 `devcontainer-feature.json`（元数据）+ `install.sh`，CLI 即自动发现；若 feature 需要端口映射，再添加可选的 `ports.json` 旁车配置。没有 `ports.json` 时视为不需要端口映射。
+
+`ports.json` 示例：
+
+```json
+{
+    "ports": [
+        {
+            "env": "DEVCONTAINER_MY_FEATURE_PORT",
+            "containerPort": 8123,
+            "defaultHostPort": 48123
+        }
+    ]
+}
+```
+
+其中 `containerPort` 是 feature 在容器内监听的端口，`env` 是生成配置和启动时使用的宿主机端口环境变量，`defaultHostPort` 是不经过 CLI 动态启动时的回退端口。
 
 ### 发布与 CI
 
@@ -280,7 +296,7 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 
 - **`runArgs`**：`NET_ADMIN` + `NET_RAW` 权限（供 iptables 使用）
 - **`mounts`**：SSH 公钥只读挂载、持久化 Volume（见上文数据持久化表）
-- **`appPort`**：映射两个端口 — `${localEnv:DEVCONTAINER_SSH_PORT}` → 容器 `2222`（SSH），`${localEnv:DEVCONTAINER_OPCD_PORT}` → 容器 `4096`（OpenCode Web UI）
+- **`appPort`**：始终映射基础镜像的 `${localEnv:DEVCONTAINER_SSH_PORT}` → 容器 `2222`（SSH），并按选中的 feature 追加其 `ports.json` 中声明的端口（当前 OpenCode 为 `${localEnv:DEVCONTAINER_OPCD_PORT}` → 容器 `4096`）
 - **`containerEnv`**：`NODE_OPTIONS`（4GB 堆内存）、代理环境变量、`POWERLEVEL9K_DISABLE_GITSTATUS`
 - **`remoteEnv`**：OpenCode Web UI 认证（`OPENCODE_SERVER_USERNAME` / `OPENCODE_SERVER_PASSWORD`）与端口（`DEVCONTAINER_OPCD_PORT`）
 - **`postStartCommand`**：`init-ssh.sh`（启动 SSH；OpenCode Web 启动由 `opencode` feature 的 postStartCommand 负责）
@@ -313,9 +329,9 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 ### 启动命令 (`coding-agent-devcontainer up`)
 
 - 检测可用的 devcontainer CLI（按优先级：`devcontainer` → `npx` → `pnpx` → `bun` → `bunx`）
-- 从指定 SSH 端口开始自动寻找**两个连续**可用端口：第一个用于 SSH，第二个用于 OpenCode Web UI（递增扫描至 65535）
+- 从指定起始端口开始向上自动寻找足够数量的空闲端口（递增扫描至 65535），数量由生成配置中的 `appPort` 决定
 - 使用项目本地 `.devcontainer/devcontainer.json`（不存在则提示先 `init`）
-- 通过 `DEVCONTAINER_SSH_PORT` 和 `DEVCONTAINER_OPCD_PORT` 环境变量注入端口，执行 `devcontainer up`
+- 根据生成配置中的 `appPort`，注入对应的 `DEVCONTAINER_*_PORT` 环境变量，执行 `devcontainer up`
 
 ### OpenCode Web 启动脚本 (`src/opencode/start-opencode-web.py`)
 
