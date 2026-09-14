@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 from coding_agent_devcontainer import features
-from coding_agent_devcontainer.render import render_devcontainer
 from coding_agent_devcontainer.ports import load_feature_ports
+from coding_agent_devcontainer.render import render_devcontainer
 from coding_agent_devcontainer.up import allocate_ports, workspace_up
 
 

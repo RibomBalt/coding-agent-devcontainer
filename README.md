@@ -38,7 +38,7 @@
 |---------|------|
 | `opencode` | OpenCode coding agent（默认勾选，安装 + 启动 Web UI） |
 | `codex` | OpenAI Codex CLI coding agent（安装） |
-| `dsh` | DeepSeek Harness（安装 + 启动 Web UI） |
+| `dsh` | DeepSeek Harness 源码安装 + Web UI |
 | `playwright` | Playwright Chromium 系统依赖 + 浏览器 |
 | `python-uv` | uv 包管理器 + PyPI 镜像 |
 | `golang` | Go 工具链 + GOPROXY |
@@ -205,6 +205,7 @@ coding-agent-devcontainer up -w /path/to/your/workspace -p 40022
 | `opencode-local-share` * | `/home/node/.local/share/opencode` | OpenCode 本地数据 |
 | `devcontainer-opencode-cache` * | `/home/node/.cache/opencode` | OpenCode 缓存 |
 | `codex-config` * | `/home/node/.codex` | Codex 配置与数据 |
+| `dsh-config` * | `/home/node/.dsh` | DeepSeek Harness 配置与 Web UI 日志 |
 | `devcontainer-ssh-hostkey` | `/home/node/.ssh/host_ssh_key` | SSH Host Key |
 | `devcontainer-uv-cache` * | `/home/node/.cache/uv` | UV 包管理器缓存 |
 | `devcontainer-pnpm-home` | `/usr/local/share/pnpm-global` | pnpm 全局包及 store |
@@ -343,9 +344,12 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 
 ### DeepSeek Harness Web 启动脚本 (`src/dsh/start-dsh-web.py`)
 
-- 使用 `dsh web --host 127.0.0.1 --port 5001` 启动 DSH Web UI
+- Feature 的 `postCreateCommand` 会将 DeepSeek Harness 源码 clone 到 `/home/node/deepseek-harness`，然后执行 `pnpm install --dangerously-allow-all-builds` 和 `pnpm run build`
+- `version` feature option 表示源码 branch/tag，默认值为 `master`；CLI 更新已有配置时会保留现有 feature option
+- 使用 `pnpm dsh web --host 127.0.0.1 --port 5001` 在源码目录启动 DSH Web UI
 - 使用 Python 标准库 TCP relay 将容器 `5000` 转发到 `127.0.0.1:5001`
 - `ports.json` 将容器 `5000` 声明为 DSH feature 的对外端口
+- relay 监听容器所有网络接口；DSH Web UI 本身没有额外的 TLS/认证层，宿主机端口发布应仅用于受信任环境，不要直接暴露到不受信任的网络
 
 ## 注意事项
 

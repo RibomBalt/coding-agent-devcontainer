@@ -1,13 +1,13 @@
 {
     "id": "dsh",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "DeepSeek Harness",
     "description": "Installs and launches the DeepSeek Harness Web UI.",
     "options": {
         "version": {
             "type": "string",
-            "default": "latest",
-            "description": "DeepSeek Harness version to install"
+            "default": "master",
+            "description": "DeepSeek Harness source branch or tag"
         }
     },
     "mounts": [
@@ -17,7 +17,7 @@
             "type": "volume"
         }
     ],
-    "postCreateCommand": "export PATH=/usr/local/share/pnpm-global/bin:/usr/local/share/npm-global/bin:$PATH && pnpm add -g @deepseek-ai/dsh",
+    "postCreateCommand": "/home/node/.local/bin/install-dsh-source.sh",
     "postStartCommand": "/home/node/.local/bin/start-dsh-web.py",
     "installsAfter": []
 }

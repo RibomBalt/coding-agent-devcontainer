@@ -95,18 +95,23 @@ def _remote_env(selected: list[str]) -> dict[str, str]:
     return remote_env
 
 
-def render_devcontainer(selected: list[str], gpu: bool) -> dict:
+def render_devcontainer(
+    selected: list[str],
+    gpu: bool,
+    feature_options: dict[str, dict] | None = None,
+) -> dict:
     """Build the full devcontainer.json dict for a project.
 
     Args:
         selected: ids of the optional features to enable.
         gpu: whether to enable GPU support.
+        feature_options: optional feature option values keyed by feature id.
     """
     features: dict[str, dict] = {}
     for feature_id in selected:
         feature = get_feature(feature_id)
         if feature is not None:
-            features[feature.reference] = {}
+            features[feature.reference] = dict((feature_options or {}).get(feature_id, {}))
 
     run_args = ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"]
     if gpu:

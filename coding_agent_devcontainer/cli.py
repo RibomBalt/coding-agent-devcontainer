@@ -43,6 +43,17 @@ def _selected_from_config(config: dict) -> list[str]:
     return selected
 
 
+def _feature_options_from_config(config: dict) -> dict[str, dict]:
+    """Extract option values for known features from an existing config."""
+    options = {}
+    known_features = {f.id for f in all_features()}
+    for ref, feature_options in (config.get("features") or {}).items():
+        feature_id = ref.rstrip("/").split("/")[-1].split(":")[0]
+        if feature_id in known_features and isinstance(feature_options, dict):
+            options[feature_id] = dict(feature_options)
+    return options
+
+
 def _gpu_from_config(config: dict) -> bool:
     return "--gpus=all" in (config.get("runArgs") or [])
 
@@ -131,6 +142,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         return 1
 
     current_selected = _selected_from_config(existing)
+    current_feature_options = _feature_options_from_config(existing)
     current_gpu = _gpu_from_config(existing)
 
     if args.non_interactive:
@@ -144,7 +156,7 @@ def cmd_update(args: argparse.Namespace) -> int:
         selected = _prompt_features(current_selected)
         gpu = _prompt_gpu(current_gpu)
 
-    config = render_devcontainer(selected, gpu)
+    config = render_devcontainer(selected, gpu, current_feature_options)
     path = _write_config(workspace, config)
     console.print(f"[green]✓ 已更新 {path}[/green]")
     console.print(f"  已选择: {', '.join(selected) or '(无)'}")
