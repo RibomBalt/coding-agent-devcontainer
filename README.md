@@ -4,7 +4,7 @@
 
 ## Feature 架构
 
-基础工具链（系统软件包、Node.js、pnpm、shell、SSH）统一打包进预构建的 base image，其余工具（Playwright、uv、Go、git-delta）与 coding agent（OpenCode）以 [Dev Container Features](https://containers.dev/implementors/features) 形式按需组合，每个项目只安装所需工具链。
+基础工具链（系统软件包、Node.js、pnpm、shell、SSH）统一打包进预构建的 base image，其余工具（Playwright、uv、Go、git-delta）与 coding agents（OpenCode、Codex、Pi）以 [Dev Container Features](https://containers.dev/implementors/features) 形式按需组合，每个项目只安装所需工具链。
 
 ### 架构总览
 
@@ -16,7 +16,7 @@
 │    + shell/SSH/配置 ─┘  base image                     │
 │                                                         │
 │  src/                     发布 tgz ───► GHCR           │
-│    opencode/  codex/  dsh/  playwright/                │
+│    opencode/  codex/  dsh/  pi/  playwright/           │
 │    python-uv/  golang/  git-delta/                     │
 │                                                         │
 │  coding_agent_devcontainer/  CLI 工具                   │
@@ -39,6 +39,7 @@
 | `opencode` | OpenCode coding agent（默认勾选，安装 + 启动 Web UI） |
 | `codex` | OpenAI Codex CLI coding agent（安装） |
 | `dsh` | DeepSeek Harness 源码安装 + Web UI |
+| `pi` | Pi coding agent（安装） |
 | `playwright` | Playwright Chromium 系统依赖 + 浏览器 |
 | `python-uv` | uv 包管理器 + PyPI 镜像 |
 | `golang` | Go 工具链 + GOPROXY |
@@ -75,6 +76,7 @@ CLI 会在目标项目生成 `.devcontainer/devcontainer.json`，引用 base ima
 | Python | 可通过 uv 安装指定版本 |
 | OpenCode | `opencode` CLI（最新版），自动启动 Web UI（`opencode serve`） |
 | Codex | `codex` CLI（最新版，`@openai/codex`） |
+| Pi | `pi` CLI（最新版，`@earendil-works/pi-coding-agent`） |
 
 ### 包管理器与镜像
 
@@ -206,6 +208,7 @@ coding-agent-devcontainer up -w /path/to/your/workspace -p 40022
 | `devcontainer-opencode-cache` * | `/home/node/.cache/opencode` | OpenCode 缓存 |
 | `codex-config` * | `/home/node/.codex` | Codex 配置与数据 |
 | `dsh-config` * | `/home/node/.dsh` | DeepSeek Harness 配置与 Web UI 日志 |
+| `pi-config` * | `/home/node/.pi` | Pi 配置与数据 |
 | `devcontainer-ssh-hostkey` | `/home/node/.ssh/host_ssh_key` | SSH Host Key |
 | `devcontainer-uv-cache` * | `/home/node/.cache/uv` | UV 包管理器缓存 |
 | `devcontainer-pnpm-home` | `/usr/local/share/pnpm-global` | pnpm 全局包及 store |
@@ -228,6 +231,7 @@ coding-agent-devcontainer up -w /path/to/your/workspace -p 40022
 ├── src/                         # Dev Container Feature 源码（可选 feature，按需组合）
 │   ├── opencode/                # OpenCode coding agent
 │   ├── codex/                   # OpenAI Codex CLI coding agent
+│   ├── pi/                       # Pi coding agent
 │   ├── playwright/              # Playwright Chromium
 │   ├── python-uv/               # uv + PyPI 镜像
 │   ├── golang/                  # Go 工具链

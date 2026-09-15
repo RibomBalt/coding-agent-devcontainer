@@ -1,0 +1,15 @@
+{
+    "id": "pi",
+    "version": "1.0.0",
+    "name": "Pi Coding Agent",
+    "description": "Installs the Pi coding agent.",
+    "mounts": [
+        {
+            "source": "pi-config",
+            "target": "/home/node/.pi",
+            "type": "volume"
+        }
+    ],
+    "postCreateCommand": "export PATH=/usr/local/share/pnpm-global/bin:/usr/local/share/npm-global/bin:$PATH && pnpm add -g --ignore-scripts @earendil-works/pi-coding-agent",
+    "installsAfter": []
+}
