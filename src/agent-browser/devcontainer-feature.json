@@ -1,0 +1,22 @@
+{
+    "id": "agent-browser",
+    "version": "1.0.0",
+    "name": "Agent Browser",
+    "description": "Installs agent-browser and Chrome for Testing.",
+    "options": {
+        "agent_browser_version": {
+            "type": "string",
+            "default": "latest",
+            "description": "agent-browser version to install"
+        }
+    },
+    "mounts": [
+        {
+            "source": "agent-browser-chromium",
+            "target": "/home/node/.agent-browser",
+            "type": "volume"
+        }
+    ],
+    "postCreateCommand": "agent-browser-install-chromium",
+    "installsAfter": []
+}
