@@ -180,7 +180,7 @@ def cmd_up(args: argparse.Namespace) -> int:
         return 1
     console.print(f"Using devcontainer CLI: {cmd[0]}")
 
-    return workspace_up(cmd, str(workspace), args.ssh_port)
+    return workspace_up(cmd, str(workspace), args.ssh_port, args.force_recreate)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -238,6 +238,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=40022,
         help="宿主机端口分配起始值（默认 40022，按需向上寻找空闲端口）",
+    )
+    up_parser.add_argument(
+        "--force-recreate",
+        action="store_true",
+        help="拉取最新 base image、升级 Feature 锁文件，删除已有容器并无缓存重建",
     )
     up_parser.set_defaults(func=cmd_up)
 

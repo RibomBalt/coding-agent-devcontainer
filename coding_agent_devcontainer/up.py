@@ -123,11 +123,18 @@ def resolve_env(
     return result
 
 
-def workspace_up(cmd: list[str], workspace_path: str, ssh_port: int) -> int:
+def workspace_up(
+    cmd: list[str],
+    workspace_path: str,
+    ssh_port: int,
+    force_recreate: bool = False,
+) -> int:
     """Start the dev container for the given workspace.
 
     Injects environment variables for every generated appPort with dynamically
-    allocated ports, then runs `devcontainer up`.
+    allocated ports, then runs `devcontainer up`. When force_recreate is true,
+    the configured base image is pulled and feature lockfile updated before
+    the existing container is removed for an uncached rebuild.
     """
     config = Path(workspace_path) / ".devcontainer" / "devcontainer.json"
     port_env_names = _port_env_names(config)
@@ -142,7 +149,28 @@ def workspace_up(cmd: list[str], workspace_path: str, ssh_port: int) -> int:
     assignments = ", ".join(f"{name}={port}" for name, port in zip(port_env_names, ports))
     console.print(f"Starting workspace with ports: {assignments or '(none)'}")
 
+    up_args = ["up", "--workspace-folder", workspace_path, "--config", str(config)]
+    if force_recreate:
+        config_data = json.loads(config.read_text())
+        image = config_data.get("image")
+        if image:
+            console.print(f"Pulling latest base image: {image}")
+            pull_result = subprocess.run(["docker", "pull", image], env=env)
+            if pull_result.returncode != 0:
+                return pull_result.returncode
+
+        if config_data.get("features"):
+            console.print("Upgrading feature lockfile to the latest allowed versions")
+            upgrade_result = subprocess.run(
+                cmd + ["upgrade", "--workspace-folder", workspace_path, "--config", str(config)],
+                env=env,
+            )
+            if upgrade_result.returncode != 0:
+                return upgrade_result.returncode
+
+        up_args.extend(["--remove-existing-container", "--build-no-cache"])
+
     return subprocess.run(
-        cmd + ["up", "--workspace-folder", workspace_path, "--config", str(config)],
+        cmd + up_args,
         env=env,
     ).returncode
