@@ -17,6 +17,6 @@
             "type": "volume"
         }
     ],
-    "postCreateCommand": "agent-browser-install-chromium",
+    "postCreateCommand": "agent-browser-setup",
     "installsAfter": []
 }

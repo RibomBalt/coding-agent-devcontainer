@@ -9,14 +9,15 @@ FEATURE_DIR="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$USER_HOME/.agent-browser"
 chown -R "$USERNAME":"$USERNAME" "$USER_HOME/.agent-browser"
 
-# Install the CLI as the remote user. The browser itself is installed by the
-# postCreateCommand after the named volume has been mounted.
-su -l -s /bin/bash -c \
-    "export PNPM_HOME=/usr/local/share/pnpm-global && export PATH=\$PNPM_HOME/bin:/usr/local/share/npm-global/bin:\$PATH && pnpm add -g 'agent-browser@${AGENT_BROWSER_VERSION}'" \
-    "$USERNAME"
+# Save the selected version for the postCreate hook, which runs after the
+# pnpm-global volume is mounted.
+install -d -m 0755 /usr/local/share/agent-browser
+printf '%s\n' "$AGENT_BROWSER_VERSION" > /usr/local/share/agent-browser/version
+chmod 0644 /usr/local/share/agent-browser/version
 
 ln -sfn /usr/local/share/pnpm-global/bin/agent-browser /usr/local/bin/agent-browser
 install -m 0755 "$FEATURE_DIR/install-chromium.sh" /usr/local/bin/agent-browser-install-chromium
+install -m 0755 "$FEATURE_DIR/setup.sh" /usr/local/bin/agent-browser-setup
 
 # Keep these packages aligned with `agent-browser install --with-deps` for
 # Debian. That command also downloads Chrome, so the browser is installed by

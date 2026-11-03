@@ -3,6 +3,8 @@ set -euo pipefail
 
 echo "==> Verifying agent-browser feature"
 
+agent-browser-setup
+
 command -v agent-browser >/dev/null
 agent-browser --version
 
