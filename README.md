@@ -295,8 +295,6 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 1. `publish-features`：使用 `devcontainers/action` 将 `src/` 下所有 feature 打包发布到 GHCR（`ghcr.io/<owner>/<repo>/<feature-id>:<version>`）。
 2. `build-base-image`：`docker build -f image/Dockerfile-base` 构建 base image 并推送到 GHCR。
 
-> 注意：当前仓库 remote 为 Gitee；如需 GHCR 发布，请将仓库镜像到 GitHub 并配置 `GITHUB_TOKEN`。
-
 ### 容器配置（`devcontainer.json`）
 
 项目配置由 CLI 生成（`coding-agent-devcontainer init`），不维护独立的 gpu/nogpu 模板。`--gpu` 仅改变两处：向 `runArgs` 追加 `--gpus=all`，并向 `containerEnv` 添加 `NVIDIA_VISIBLE_DEVICES` / `NVIDIA_DRIVER_CAPABILITIES`。

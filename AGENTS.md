@@ -18,7 +18,7 @@
 
 - feature 测试脚本放在仓库根目录 `test/<feature-id>/test.sh`，Python CLI 单测放在 `test/cli/`；统一目录便于现有测试入口发现和执行测试。
 - 发布 GHCR 时，owner/repository 名称必须转为小写；GHCR 要求镜像仓库名称为小写。
-- 发布流程以 GitHub remote 为目标，并由 `v*` tag 触发；Gitee remote 不是 GHCR 发布目标，避免误推发布流程。
+- 发布流程以 GitHub remote 为目标，由推送 `v*` tag 触发 GHCR 发布。
 
 ## 禁止事项
 
