@@ -118,7 +118,10 @@ def cmd_init(args: argparse.Namespace) -> int:
         )
         gpu = args.gpu
     else:
-        selected = _prompt_features(current_selected, default_checked=["opencode"])
+        selected = _prompt_features(
+            current_selected,
+            default_checked=["codex", "git-delta", "agent-browser", "pi"],
+        )
         gpu = _prompt_gpu(current_gpu)
 
     for feature_id in selected:

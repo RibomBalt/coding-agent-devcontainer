@@ -139,7 +139,11 @@ def test_workspace_up_injects_every_rendered_port(monkeypatch, tmp_path: Path) -
 
     monkeypatch.setattr(
         "coding_agent_devcontainer.up.allocate_ports",
-        lambda start, count: (41000, 41003),
+        lambda start, count, reserved_ports: (41000, 41003),
+    )
+    monkeypatch.setattr(
+        "coding_agent_devcontainer.up._devcontainer_host_ports",
+        lambda workspace: (set(), set()),
     )
 
     class Completed:
