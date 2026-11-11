@@ -9,7 +9,7 @@ from rich.console import Console
 
 from .features import all_features, get_feature
 from .render import render_devcontainer
-from .up import check_cli, workspace_up
+from .up import check_cli, parse_port_mapping, workspace_up
 
 console = Console()
 
@@ -180,7 +180,13 @@ def cmd_up(args: argparse.Namespace) -> int:
         return 1
     console.print(f"Using devcontainer CLI: {cmd[0]}")
 
-    return workspace_up(cmd, str(workspace), args.ssh_port, args.force_recreate)
+    return workspace_up(
+        cmd,
+        str(workspace),
+        args.ssh_port,
+        args.force_recreate,
+        args.add_ports,
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -243,6 +249,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--force-recreate",
         action="store_true",
         help="拉取最新 base image、升级 Feature 锁文件，删除已有容器并无缓存重建",
+    )
+    up_parser.add_argument(
+        "--add-port",
+        dest="add_ports",
+        type=parse_port_mapping,
+        action="append",
+        default=[],
+        metavar="HOST_PORT:CONTAINER_PORT",
+        help="临时追加端口映射，可重复指定，例如 --add-port 8080:80",
     )
     up_parser.set_defaults(func=cmd_up)
 

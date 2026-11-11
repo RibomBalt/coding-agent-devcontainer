@@ -5,6 +5,7 @@ import re
 import shutil
 import socket
 import subprocess
+import tempfile
 from pathlib import Path
 
 from rich.console import Console
@@ -43,6 +44,17 @@ def check_port_availability(port: int) -> bool:
         raise
 
 
+def parse_port_mapping(value: str) -> str:
+    """Validate and normalize a HOST_PORT:CONTAINER_PORT mapping."""
+    parts = value.split(":")
+    if len(parts) != 2 or not all(part.isdecimal() for part in parts):
+        raise ValueError("端口映射格式应为 HOST_PORT:CONTAINER_PORT，例如 8080:80")
+    host_port, container_port = (int(part) for part in parts)
+    if not (1 <= host_port <= 65535 and 1 <= container_port <= 65535):
+        raise ValueError("端口必须在 1..65535 范围内")
+    return f"{host_port}:{container_port}"
+
+
 def allocate_ports(
     start_port: int,
     count: int = 2,
@@ -67,8 +79,8 @@ def allocate_ports(
     return None
 
 
-def _devcontainer_reserved_ports() -> set[int]:
-    """Return host ports reserved by existing Dev Container containers."""
+def _devcontainer_host_ports(workspace_path: str | Path) -> tuple[set[int], set[int]]:
+    """Return host ports used by other workspaces and by this workspace."""
     try:
         containers = subprocess.run(
             [
@@ -87,21 +99,29 @@ def _devcontainer_reserved_ports() -> set[int]:
             return set()
 
         inspected = subprocess.run(
-            ["docker", "inspect", "--format={{json .HostConfig.PortBindings}}", *containers],
+            ["docker", "inspect", *containers],
             capture_output=True,
             text=True,
             check=True,
         )
     except (OSError, subprocess.SubprocessError) as exc:
         console.print(f"[yellow]无法读取已有 Dev Container 端口映射：{exc}[/yellow]")
-        return set()
+        return set(), set()
 
-    ports: set[int] = set()
-    for raw_bindings in inspected.stdout.splitlines():
-        try:
-            bindings = json.loads(raw_bindings)
-        except json.JSONDecodeError:
-            continue
+    reserved_ports: set[int] = set()
+    workspace_ports: set[int] = set()
+    try:
+        inspected_containers = json.loads(inspected.stdout)
+    except json.JSONDecodeError:
+        return reserved_ports, workspace_ports
+    current_workspace = Path(workspace_path).resolve()
+    for container in inspected_containers:
+        labels = (container.get("Config") or {}).get("Labels") or {}
+        local_folder = labels.get("devcontainer.local_folder")
+        belongs_to_workspace = bool(
+            local_folder and Path(local_folder).resolve() == current_workspace
+        )
+        bindings = (container.get("HostConfig") or {}).get("PortBindings")
         if not isinstance(bindings, dict):
             continue
         for host_bindings in bindings.values():
@@ -114,8 +134,11 @@ def _devcontainer_reserved_ports() -> set[int]:
                 if isinstance(host_port, str) and host_port.isdigit():
                     port = int(host_port)
                     if 1 <= port <= 65535:
-                        ports.add(port)
-    return ports
+                        if belongs_to_workspace:
+                            workspace_ports.add(port)
+                        else:
+                            reserved_ports.add(port)
+    return reserved_ports, workspace_ports
 
 
 _LOCAL_ENV_PORT = re.compile(r"^\$\{localEnv:([^}:]+)(?::[^}]*)?\}:\d+$")
@@ -184,18 +207,59 @@ def workspace_up(
     workspace_path: str,
     ssh_port: int,
     force_recreate: bool = False,
+    add_ports: list[str] | None = None,
 ) -> int:
     """Start the dev container for the given workspace.
 
     Injects environment variables for every generated appPort with dynamically
-    allocated ports, then runs `devcontainer up`. When force_recreate is true,
-    the configured base image is pulled and feature lockfile updated before
-    the existing container is removed for an uncached rebuild.
+    allocated ports, then runs `devcontainer up`. Additional fixed mappings in
+    `add_ports` are applied through a temporary override config. When
+    force_recreate is true, the configured base image is pulled and feature
+    lockfile updated before the existing container is removed for an uncached
+    rebuild.
     """
     config = Path(workspace_path) / ".devcontainer" / "devcontainer.json"
+    config_data = json.loads(config.read_text())
+    add_ports = [parse_port_mapping(port) for port in (add_ports or [])]
+    added_host_port_list = [int(port.split(":", maxsplit=1)[0]) for port in add_ports]
+    added_host_ports = set(added_host_port_list)
+    if len(added_host_ports) != len(added_host_port_list):
+        console.print("[red]多个 --add-port 不能使用相同的宿主机端口[/red]")
+        return 1
+
+    app_ports = config_data.get("appPort") or []
+    if isinstance(app_ports, (str, int)):
+        app_ports = [app_ports]
+    if not isinstance(app_ports, list):
+        console.print("[red]devcontainer.json 中的 appPort 必须是字符串、整数或列表[/red]")
+        return 1
+    configured_host_ports: set[int] = set()
+    for app_port in app_ports:
+        if isinstance(app_port, int) and not isinstance(app_port, bool):
+            configured_host_ports.add(app_port)
+        elif isinstance(app_port, str):
+            match = re.fullmatch(r"(\d+)(?::\d+)?", app_port)
+            if match:
+                configured_host_ports.add(int(match.group(1)))
+    if added_host_ports & configured_host_ports:
+        console.print("[red]--add-port 与 devcontainer.json 中的 appPort 宿主机端口重复[/red]")
+        return 1
+
     port_env_names = _port_env_names(config)
-    reserved_ports = _devcontainer_reserved_ports()
-    ports = allocate_ports(ssh_port, len(port_env_names), reserved_ports)
+    reserved_ports, workspace_ports = _devcontainer_host_ports(workspace_path)
+    occupied_added_ports = any(
+        port in reserved_ports
+        or (port not in workspace_ports and not check_port_availability(port))
+        for port in added_host_ports
+    )
+    if occupied_added_ports:
+        console.print("[red]指定的 --add-port 宿主机端口已被占用或已有开发容器预留[/red]")
+        return 1
+    ports = allocate_ports(
+        ssh_port,
+        len(port_env_names),
+        reserved_ports | configured_host_ports | added_host_ports,
+    )
     if ports is None:
         console.print(f"[red]No available port found for SSH on {ssh_port}-65535[/red]")
         return 1
@@ -208,7 +272,6 @@ def workspace_up(
 
     up_args = ["up", "--workspace-folder", workspace_path, "--config", str(config)]
     if force_recreate:
-        config_data = json.loads(config.read_text())
         image = config_data.get("image")
         if image:
             console.print(f"Pulling latest base image: {image}")
@@ -227,7 +290,27 @@ def workspace_up(
 
         up_args.extend(["--remove-existing-container", "--build-no-cache"])
 
-    return subprocess.run(
-        cmd + up_args,
-        env=env,
-    ).returncode
+    override_path: Path | None = None
+    if add_ports:
+        override = {"appPort": [*app_ports, *add_ports]}
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=config.parent,
+            prefix=".devcontainer-override-",
+            suffix=".json",
+            delete=False,
+        ) as temp_config:
+            json.dump(override, temp_config, ensure_ascii=False, indent=2)
+            temp_config.write("\n")
+            override_path = Path(temp_config.name)
+        up_args.extend(["--override-config", str(override_path)])
+
+    try:
+        return subprocess.run(
+            cmd + up_args,
+            env=env,
+        ).returncode
+    finally:
+        if override_path is not None:
+            override_path.unlink(missing_ok=True)
