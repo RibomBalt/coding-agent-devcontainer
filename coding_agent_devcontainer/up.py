@@ -43,7 +43,11 @@ def check_port_availability(port: int) -> bool:
         raise
 
 
-def allocate_ports(start_port: int, count: int = 2) -> tuple[int, ...] | None:
+def allocate_ports(
+    start_port: int,
+    count: int = 2,
+    reserved_ports: set[int] | None = None,
+) -> tuple[int, ...] | None:
     """Find `count` free ports by scanning upward from `start_port`.
 
     Returns the allocated ports in scan order or None if they cannot be found.
@@ -53,13 +57,65 @@ def allocate_ports(start_port: int, count: int = 2) -> tuple[int, ...] | None:
     if count < 0:
         raise ValueError("count must not be negative")
 
+    reserved_ports = reserved_ports or set()
     available: list[int] = []
     for port in range(start_port, 65536):
-        if check_port_availability(port):
+        if port not in reserved_ports and check_port_availability(port):
             available.append(port)
             if len(available) == count:
                 return tuple(available)
     return None
+
+
+def _devcontainer_reserved_ports() -> set[int]:
+    """Return host ports reserved by existing Dev Container containers."""
+    try:
+        containers = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "--all",
+                "--quiet",
+                "--filter",
+                "label=devcontainer.local_folder",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.split()
+        if not containers:
+            return set()
+
+        inspected = subprocess.run(
+            ["docker", "inspect", "--format={{json .HostConfig.PortBindings}}", *containers],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        console.print(f"[yellow]无法读取已有 Dev Container 端口映射：{exc}[/yellow]")
+        return set()
+
+    ports: set[int] = set()
+    for raw_bindings in inspected.stdout.splitlines():
+        try:
+            bindings = json.loads(raw_bindings)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(bindings, dict):
+            continue
+        for host_bindings in bindings.values():
+            if not isinstance(host_bindings, list):
+                continue
+            for binding in host_bindings:
+                if not isinstance(binding, dict):
+                    continue
+                host_port = binding.get("HostPort")
+                if isinstance(host_port, str) and host_port.isdigit():
+                    port = int(host_port)
+                    if 1 <= port <= 65535:
+                        ports.add(port)
+    return ports
 
 
 _LOCAL_ENV_PORT = re.compile(r"^\$\{localEnv:([^}:]+)(?::[^}]*)?\}:\d+$")
@@ -138,7 +194,8 @@ def workspace_up(
     """
     config = Path(workspace_path) / ".devcontainer" / "devcontainer.json"
     port_env_names = _port_env_names(config)
-    ports = allocate_ports(ssh_port, len(port_env_names))
+    reserved_ports = _devcontainer_reserved_ports()
+    ports = allocate_ports(ssh_port, len(port_env_names), reserved_ports)
     if ports is None:
         console.print(f"[red]No available port found for SSH on {ssh_port}-65535[/red]")
         return 1
