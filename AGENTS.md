@@ -19,6 +19,8 @@
 - feature 测试脚本放在仓库根目录 `test/<feature-id>/test.sh`，Python CLI 单测放在 `test/cli/`；统一目录便于现有测试入口发现和执行测试。
 - 发布 GHCR 时，owner/repository 名称必须转为小写；GHCR 要求镜像仓库名称为小写。
 - 发布流程以 GitHub remote 为目标，由推送 `v*` tag 触发 GHCR 发布。
+- 需要发布 feature 改动时，只 bump 对应 `src/<id>/devcontainer-feature.json` 顶层的 `version`，按语义化版本递增（兼容性修复 bump patch，向后兼容的功能 bump minor，破坏性改动 bump major）；不要顺带 bump 未改动的 feature。然后创建并推送新的 `v*` Git tag 触发发布。注意发布工作流每次都会扫描并发布 `src/` 下的所有 feature。
+- base image 没有单独维护的版本字段；其发布版本使用仓库的 `v*` Git tag。需要发布新的 base image 时，创建并推送下一个 `vX.Y.Z` tag；工作流检测到 `image/` 内容变化时构建新镜像并发布该 tag 与 `latest`，内容未变化时则将 `latest` 重新标记为该 tag。不要为此在 Dockerfile 另加镜像版本字段。
 
 ## 禁止事项
 
