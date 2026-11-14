@@ -155,6 +155,10 @@ coding-agent-devcontainer up -w /path/to/your/workspace -p 2222
 
 # 更新 base image 和 Feature 锁文件，删除已有容器并无缓存重建
 coding-agent-devcontainer up -w /path/to/your/workspace --force-recreate
+
+# 临时覆写容器内的项目目录（默认 /workspace/<项目目录名>）
+coding-agent-devcontainer up -w /path/to/your/workspace \
+    --workspace-mount-target /workspace/custom-name
 ```
 
 > 兼容入口：旧的 `scripts/02-devcontainer-up.py` 仍可用，内部转发到 `coding-agent-devcontainer up`（`--gpus` 参数已废弃，GPU 由 `devcontainer.json` 的 `runArgs` 决定）。
@@ -340,6 +344,7 @@ base image 由 `docker build` 构建，包含所有项目共用的基础能力�
 - 从指定起始端口开始向上自动寻找足够数量的空闲端口（递增扫描至 65535），数量由生成配置中的 `appPort` 决定
 - 使用项目本地 `.devcontainer/devcontainer.json`（不存在则提示先 `init`）
 - 根据生成配置中的 `appPort`，注入对应的 `DEVCONTAINER_*_PORT` 环境变量，执行 `devcontainer up`
+- 默认将项目挂载到 `/workspace/<项目目录名>`，使 Codex 按当前工作目录筛选会话；`--workspace-mount-target` 可在启动时临时覆写挂载目标
 - `--force-recreate` 会先拉取配置中的 base image、升级 Feature 锁文件，再删除已有容器并以无缓存方式重建；Docker volumes 保留
 
 ### OpenCode Web 启动脚本 (`src/opencode/start-opencode-web.py`)

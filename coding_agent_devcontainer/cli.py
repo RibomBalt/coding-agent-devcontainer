@@ -9,7 +9,7 @@ from rich.console import Console
 
 from .features import all_features, get_feature
 from .render import render_devcontainer
-from .up import check_cli, parse_port_mapping, workspace_up
+from .up import check_cli, parse_port_mapping, parse_workspace_mount_target, workspace_up
 
 console = Console()
 
@@ -129,7 +129,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             console.print(f"[red]未知 feature: {feature_id}[/red]")
             return 1
 
-    config = render_devcontainer(selected, gpu)
+    config = render_devcontainer(selected, gpu, workspace_path=workspace)
     path = _write_config(workspace, config)
     console.print(f"[green]✓ 已生成 {path}[/green]")
     console.print(f"  已选择: {', '.join(selected) or '(无)'}")
@@ -159,7 +159,9 @@ def cmd_update(args: argparse.Namespace) -> int:
         selected = _prompt_features(current_selected)
         gpu = _prompt_gpu(current_gpu)
 
-    config = render_devcontainer(selected, gpu, current_feature_options)
+    config = render_devcontainer(
+        selected, gpu, current_feature_options, workspace_path=workspace
+    )
     path = _write_config(workspace, config)
     console.print(f"[green]✓ 已更新 {path}[/green]")
     console.print(f"  已选择: {', '.join(selected) or '(无)'}")
@@ -189,6 +191,7 @@ def cmd_up(args: argparse.Namespace) -> int:
         args.ssh_port,
         args.force_recreate,
         args.add_ports,
+        args.workspace_mount_target,
     )
 
 
@@ -239,6 +242,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     up_parser = sub.add_parser("up", help="启动 devcontainer 容器")
     up_parser.add_argument("-w", "--workspace", default=".", help="项目路径（默认当前目录）")
+    up_parser.add_argument(
+        "--workspace-mount-target",
+        type=parse_workspace_mount_target,
+        help="覆写容器内项目挂载路径（默认 /workspace/<项目目录名>）",
+    )
     up_parser.add_argument(
         "-p",
         "--port",

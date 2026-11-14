@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from coding_agent_devcontainer.cli import build_parser
 from coding_agent_devcontainer.up import load_env_file, resolve_env
 
 
@@ -61,3 +62,11 @@ def test_workspace_path_str_supported(tmp_path: Path) -> None:
     result = resolve_env(str(tmp_path), {}, global_env=global_env)
 
     assert result["OPENCODE_SERVER_PASSWORD"] == "project"
+
+
+def test_up_parser_accepts_workspace_mount_target() -> None:
+    args = build_parser().parse_args(
+        ["up", "--workspace-mount-target", "/projects/custom"]
+    )
+
+    assert args.workspace_mount_target == "/projects/custom"

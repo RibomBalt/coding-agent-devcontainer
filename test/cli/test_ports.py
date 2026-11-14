@@ -160,3 +160,45 @@ def test_workspace_up_injects_every_rendered_port(monkeypatch, tmp_path: Path) -
     assert workspace_up(["devcontainer"], str(tmp_path), 40022) == 0
     assert captured["env"]["DEVCONTAINER_SSH_PORT"] == "41000"
     assert captured["env"]["DEVCONTAINER_WITH_PORT"] == "41003"
+
+
+def test_workspace_up_overrides_workspace_mount_target(monkeypatch, tmp_path: Path) -> None:
+    config_path = tmp_path / ".devcontainer" / "devcontainer.json"
+    _write(config_path, json.dumps({"appPort": []}))
+    captured: dict = {}
+
+    monkeypatch.setattr(
+        "coding_agent_devcontainer.up._devcontainer_host_ports",
+        lambda workspace: (set(), set()),
+    )
+    monkeypatch.setattr(
+        "coding_agent_devcontainer.up._workspace_ssh_port",
+        lambda workspace, env: None,
+    )
+
+    class Completed:
+        returncode = 0
+
+    def run(cmd, env):
+        override_path = Path(cmd[cmd.index("--override-config") + 1])
+        captured["override"] = json.loads(override_path.read_text())
+        return Completed()
+
+    monkeypatch.setattr("coding_agent_devcontainer.up.subprocess.run", run)
+
+    assert (
+        workspace_up(
+            ["devcontainer"],
+            str(tmp_path),
+            40022,
+            workspace_mount_target="/workspace/custom-project",
+        )
+        == 0
+    )
+    assert captured["override"] == {
+        "workspaceMount": (
+            "source=${localWorkspaceFolder},target=/workspace/custom-project,"
+            "type=bind,consistency=delegated"
+        ),
+        "workspaceFolder": "/workspace/custom-project",
+    }

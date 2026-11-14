@@ -14,16 +14,11 @@ curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_RELEASE='${VERSION:-late
 EOF
 chmod 0755 /usr/local/share/codex/install.sh
 
-# Prepare the SQLite mount point before the named volume is attached. Docker
-# initializes a new volume from this directory, preserving node ownership.
 mkdir -p \
-    "$USER_HOME/.codex" \
-    "$USER_HOME/.local/share/lib/codex-sqlite"
+    "$USER_HOME/.codex"
 
 chown -R "$USERNAME":"$USERNAME" \
-    "$USER_HOME/.codex" \
-    "$USER_HOME/.local/share/lib/codex-sqlite"
-chmod 0700 "$USER_HOME/.local/share/lib/codex-sqlite"
+    "$USER_HOME/.codex"
 
 # Override git identity with the Codex identity
 su -l -s /bin/bash -c \

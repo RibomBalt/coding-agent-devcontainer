@@ -10,6 +10,8 @@ from pathlib import Path
 
 from rich.console import Console
 
+from .render import workspace_mount_spec
+
 console = Console()
 
 _GLOBAL_ENV_FILE = Path.home() / ".config" / "coding-agent-devcontainer" / ".env"
@@ -53,6 +55,16 @@ def parse_port_mapping(value: str) -> str:
     if not (1 <= host_port <= 65535 and 1 <= container_port <= 65535):
         raise ValueError("端口必须在 1..65535 范围内")
     return f"{host_port}:{container_port}"
+
+
+def parse_workspace_mount_target(value: str) -> str:
+    """Validate an absolute container path for the workspace mount target."""
+    target = value.rstrip("/")
+    if not target.startswith("/") or not target or "," in target:
+        raise ValueError(
+            "workspace mount target must be an absolute path other than / without commas"
+        )
+    return target
 
 
 def allocate_ports(
@@ -264,6 +276,7 @@ def workspace_up(
     ssh_port: int,
     force_recreate: bool = False,
     add_ports: list[str] | None = None,
+    workspace_mount_target: str | None = None,
 ) -> int:
     """Start the dev container for the given workspace.
 
@@ -276,6 +289,8 @@ def workspace_up(
     """
     config = Path(workspace_path) / ".devcontainer" / "devcontainer.json"
     config_data = json.loads(config.read_text())
+    if workspace_mount_target is not None:
+        workspace_mount_target = parse_workspace_mount_target(workspace_mount_target)
     add_ports = [parse_port_mapping(port) for port in (add_ports or [])]
     added_host_port_list = [int(port.split(":", maxsplit=1)[0]) for port in add_ports]
     added_host_ports = set(added_host_port_list)
@@ -344,8 +359,13 @@ def workspace_up(
         up_args.extend(["--remove-existing-container", "--build-no-cache"])
 
     override_path: Path | None = None
+    override: dict[str, object] = {}
     if add_ports:
-        override = {"appPort": [*app_ports, *add_ports]}
+        override["appPort"] = [*app_ports, *add_ports]
+    if workspace_mount_target:
+        override["workspaceMount"] = workspace_mount_spec(workspace_mount_target)
+        override["workspaceFolder"] = workspace_mount_target
+    if override:
         with tempfile.NamedTemporaryFile(
             mode="w",
             encoding="utf-8",

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from .constants import BASE_IMAGE
 from .features import get_feature
 from .ports import BASE_PORTS
@@ -95,10 +97,23 @@ def _remote_env(selected: list[str]) -> dict[str, str]:
     return remote_env
 
 
+def workspace_mount_spec(target: str) -> str:
+    """Build the bind-mount specification for a workspace target."""
+    if not target.startswith("/") or target == "/" or "," in target:
+        raise ValueError(
+            "workspace mount target must be an absolute path other than / without commas"
+        )
+    return (
+        f"source=${{localWorkspaceFolder}},target={target},"
+        "type=bind,consistency=delegated"
+    )
+
+
 def render_devcontainer(
     selected: list[str],
     gpu: bool,
     feature_options: dict[str, dict] | None = None,
+    workspace_path: str | Path | None = None,
 ) -> dict:
     """Build the full devcontainer.json dict for a project.
 
@@ -106,6 +121,7 @@ def render_devcontainer(
         selected: ids of the optional features to enable.
         gpu: whether to enable GPU support.
         feature_options: optional feature option values keyed by feature id.
+        workspace_path: host project path used to derive the default container path.
     """
     features: dict[str, dict] = {}
     for feature_id in selected:
@@ -123,9 +139,10 @@ def render_devcontainer(
     if "playwright" in selected:
         container_env.update(_PLAYWRIGHT_ENV)
 
-    workspace_mount = (
-        "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated"
-    )
+    project_path = Path(workspace_path or Path.cwd()).resolve()
+    project_basename = project_path.name or "workspace"
+    workspace_folder = f"/workspace/{project_basename}"
+    workspace_mount = workspace_mount_spec(workspace_folder)
 
     return {
         "name": "OpenCode Sandbox",
@@ -139,7 +156,7 @@ def render_devcontainer(
         "containerEnv": container_env,
         "remoteEnv": _remote_env(selected),
         "workspaceMount": workspace_mount,
-        "workspaceFolder": "/workspace",
+        "workspaceFolder": workspace_folder,
         "postStartCommand": _POST_START_COMMAND,
         "waitFor": "postStartCommand",
     }
