@@ -1,6 +1,6 @@
 {
     "id": "codex",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "name": "Codex Coding Agent",
     "description": "Installs and launches the OpenAI Codex coding agent.",
     "options": {
@@ -15,8 +15,16 @@
             "source": "codex-config",
             "target": "/home/node/.codex",
             "type": "volume"
+        },
+        {
+            "source": "codex-sqlite-home-${devcontainerId}",
+            "target": "/home/node/.local/share/lib/codex-sqlite",
+            "type": "volume"
         }
     ],
+    "containerEnv": {
+        "CODEX_SQLITE_HOME": "/home/node/.local/share/lib/codex-sqlite"
+    },
     "postCreateCommand": "/usr/local/share/codex/install.sh",
     "installsAfter": []
 }

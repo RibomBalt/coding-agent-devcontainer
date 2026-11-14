@@ -148,8 +148,9 @@ def test_workspace_up_injects_every_rendered_port(monkeypatch, tmp_path: Path) -
 
     class Completed:
         returncode = 0
+        stdout = ""
 
-    def run(cmd, env):
+    def run(cmd, env, **kwargs):
         captured["cmd"] = cmd
         captured["env"] = env
         return Completed()
