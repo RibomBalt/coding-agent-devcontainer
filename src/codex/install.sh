@@ -5,6 +5,15 @@ USERNAME="${_REMOTE_USER:-node}"
 USER_HOME="${_REMOTE_USER_HOME:-$(getent passwd "$USERNAME" | cut -d: -f6)}"
 FEATURE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Run the official installer after the .codex volume has been mounted.
+mkdir -p /usr/local/share/codex
+cat > /usr/local/share/codex/install.sh <<EOF
+#!/usr/bin/env bash
+set -e
+curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_RELEASE='${VERSION:-latest}' CODEX_NON_INTERACTIVE=1 sh
+EOF
+chmod 0755 /usr/local/share/codex/install.sh
+
 # Codex data / config / cache directory
 mkdir -p \
     "$USER_HOME/.codex"

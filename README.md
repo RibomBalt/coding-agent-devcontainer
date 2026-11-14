@@ -75,7 +75,7 @@ CLI 会在目标项目生成 `.devcontainer/devcontainer.json`，引用 base ima
 | Node.js | 24.19.0 |
 | Python | 可通过 uv 安装指定版本 |
 | OpenCode | `opencode` CLI（最新版），自动启动 Web UI（`opencode serve`） |
-| Codex | `codex` CLI（最新版，`@openai/codex`） |
+| Codex | `codex` CLI（OpenAI standalone 安装器） |
 | Pi | `pi` CLI（最新版，`@earendil-works/pi-coding-agent`） |
 
 ### 包管理器与镜像

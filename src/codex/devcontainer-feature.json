@@ -1,6 +1,6 @@
 {
     "id": "codex",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "Codex Coding Agent",
     "description": "Installs and launches the OpenAI Codex coding agent.",
     "options": {
@@ -17,6 +17,6 @@
             "type": "volume"
         }
     ],
-    "postCreateCommand": "export PATH=/usr/local/share/pnpm-global/bin:/usr/local/share/npm-global/bin:$PATH && pnpm add -g @openai/codex",
+    "postCreateCommand": "/usr/local/share/codex/install.sh",
     "installsAfter": []
 }
