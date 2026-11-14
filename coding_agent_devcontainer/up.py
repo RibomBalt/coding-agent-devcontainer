@@ -141,6 +141,62 @@ def _devcontainer_host_ports(workspace_path: str | Path) -> tuple[set[int], set[
     return reserved_ports, workspace_ports
 
 
+def _workspace_ssh_port(workspace_path: str | Path, env: dict[str, str]) -> int | None:
+    """Return the published host port for SSH on this workspace's running container."""
+    try:
+        containers = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "--all",
+                "--quiet",
+                "--filter",
+                "label=devcontainer.local_folder",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            env=env,
+        ).stdout.split()
+        if not containers:
+            return None
+
+        inspected = subprocess.run(
+            ["docker", "inspect", *containers],
+            capture_output=True,
+            text=True,
+            check=True,
+            env=env,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+    try:
+        inspected_containers = json.loads(inspected.stdout)
+    except json.JSONDecodeError:
+        return None
+
+    current_workspace = Path(workspace_path).resolve()
+    host_ports: set[int] = set()
+    for container in inspected_containers:
+        labels = (container.get("Config") or {}).get("Labels") or {}
+        local_folder = labels.get("devcontainer.local_folder")
+        if not local_folder or Path(local_folder).resolve() != current_workspace:
+            continue
+        if not (container.get("State") or {}).get("Running"):
+            continue
+
+        bindings = (container.get("NetworkSettings") or {}).get("Ports") or {}
+        for binding in bindings.get("2222/tcp") or []:
+            host_port = binding.get("HostPort") if isinstance(binding, dict) else None
+            if isinstance(host_port, str) and host_port.isdigit():
+                port = int(host_port)
+                if 1 <= port <= 65535:
+                    host_ports.add(port)
+
+    return next(iter(host_ports)) if len(host_ports) == 1 else None
+
+
 _LOCAL_ENV_PORT = re.compile(r"^\$\{localEnv:([^}:]+)(?::[^}]*)?\}:\d+$")
 
 
@@ -267,9 +323,6 @@ def workspace_up(
     env = resolve_env(workspace_path, os.environ.copy())
     for env_name, port in zip(port_env_names, ports):
         env[env_name] = str(port)
-    assignments = ", ".join(f"{name}={port}" for name, port in zip(port_env_names, ports))
-    console.print(f"Starting workspace with ports: {assignments or '(none)'}")
-
     up_args = ["up", "--workspace-folder", workspace_path, "--config", str(config)]
     if force_recreate:
         image = config_data.get("image")
@@ -307,10 +360,17 @@ def workspace_up(
         up_args.extend(["--override-config", str(override_path)])
 
     try:
-        return subprocess.run(
+        result = subprocess.run(
             cmd + up_args,
             env=env,
-        ).returncode
+        )
+        if result.returncode == 0:
+            actual_ssh_port = _workspace_ssh_port(workspace_path, env)
+            if actual_ssh_port is None:
+                console.print("[yellow]未能确认实际 SSH 端口[/yellow]")
+            else:
+                console.print(f"SSH 实际端口: {actual_ssh_port}")
+        return result.returncode
     finally:
         if override_path is not None:
             override_path.unlink(missing_ok=True)
