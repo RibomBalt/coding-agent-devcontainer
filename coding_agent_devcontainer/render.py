@@ -74,6 +74,11 @@ _MOUNTS = [
 ]
 
 _POST_START_COMMAND = "/home/node/.local/bin/init-ssh.sh"
+_POST_CREATE_COMMAND = (
+    "if [ -f \"$HOME/.zshrc\" ]; then "
+    "sed -i 's/^export TERM=xterm$/export TERM=\"${TERM:-xterm}\"/' \"$HOME/.zshrc\"; "
+    "fi"
+)
 
 
 def _port_mappings(selected: list[str]):
@@ -161,6 +166,7 @@ def render_devcontainer(
         "remoteEnv": _remote_env(selected),
         "workspaceMount": workspace_mount,
         "workspaceFolder": workspace_folder,
+        "postCreateCommand": _POST_CREATE_COMMAND,
         "postStartCommand": _POST_START_COMMAND,
         "waitFor": "postStartCommand",
     }

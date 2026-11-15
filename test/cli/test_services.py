@@ -1,4 +1,6 @@
 import json
+import os
+import subprocess
 from argparse import Namespace
 from pathlib import Path
 from types import SimpleNamespace
@@ -239,6 +241,25 @@ def test_rendered_config_marks_managed_container(tmp_path) -> None:
     config = render_devcontainer([], False, workspace_path=tmp_path)
 
     assert f"--label={MANAGED_CONTAINER_LABEL}=true" in config["runArgs"]
+
+
+def test_post_create_rewrites_term_fallback_and_preserves_exec_value(tmp_path) -> None:
+    zshrc = tmp_path / ".zshrc"
+    zshrc.write_text("export TERM=xterm\n")
+    config = render_devcontainer([], False, workspace_path=tmp_path)
+    env = os.environ | {"HOME": str(tmp_path), "TERM": "xterm-256color"}
+
+    subprocess.run(["sh", "-c", config["postCreateCommand"]], env=env, check=True)
+    result = subprocess.run(
+        ["sh", "-c", '. "$HOME/.zshrc"; printf %s "$TERM"'],
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert zshrc.read_text() == 'export TERM="${TERM:-xterm}"\n'
+    assert result.stdout == "xterm-256color"
 
 
 def test_workspace_up_injects_label_and_preserves_run_args(monkeypatch, tmp_path) -> None:
