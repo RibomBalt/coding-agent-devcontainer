@@ -41,6 +41,7 @@
 | `dsh` | DeepSeek Harness 源码安装 + Web UI |
 | `pi` | Pi coding agent（安装） |
 | `playwright` | Playwright Chromium 系统依赖 + 浏览器 |
+| `x11` | SSH X11 转发、xsel、x11-apps 与 Xvfb |
 | `python-uv` | uv 包管理器 + PyPI 镜像 |
 | `golang` | Go 工具链 + GOPROXY |
 | `git-delta` | 语法高亮 git diff |

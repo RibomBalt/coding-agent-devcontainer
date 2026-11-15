@@ -1,0 +1,8 @@
+{
+    "id": "x11",
+    "version": "1.0.0",
+    "name": "X11 Forwarding",
+    "description": "Installs X11 utilities and enables SSH X11 forwarding.",
+    "options": {},
+    "installsAfter": []
+}
