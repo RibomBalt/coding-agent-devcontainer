@@ -196,6 +196,7 @@ def test_workspace_up_overrides_workspace_mount_target(monkeypatch, tmp_path: Pa
         == 0
     )
     assert captured["override"] == {
+        "runArgs": ["--label=io.github.ribombalt.coding-agent-devcontainer.managed=true"],
         "workspaceMount": (
             "source=${localWorkspaceFolder},target=/workspace/custom-project,"
             "type=bind,consistency=delegated"

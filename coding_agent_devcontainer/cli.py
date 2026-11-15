@@ -1,14 +1,17 @@
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 import argcomplete
 import questionary
 from rich.console import Console
+from rich.table import Table
 
 from .features import all_features, get_feature
 from .render import render_devcontainer
+from .services import Service, connect_service, discover_services
 from .up import check_cli, parse_port_mapping, parse_workspace_mount_target, workspace_up
 
 console = Console()
@@ -195,6 +198,107 @@ def cmd_up(args: argparse.Namespace) -> int:
     )
 
 
+def _service_completer(prefix: str, parsed_args: argparse.Namespace, **kwargs) -> list[str]:
+    """Complete workspace paths for online services."""
+    try:
+        completions = set()
+        for service in discover_services():
+            if not service.running:
+                continue
+            short_name = Path(service.workspace).name
+            if service.workspace.startswith(prefix):
+                completions.add(service.workspace)
+            if short_name.startswith(prefix):
+                completions.add(short_name)
+        return sorted(completions)
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+        return []
+
+
+def _format_service(service: Service) -> str:
+    return f"{Path(service.workspace).name} ({service.workspace})"
+
+
+def cmd_connect(args: argparse.Namespace) -> int:
+    try:
+        services = discover_services()
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError) as exc:
+        console.print(f"[red]无法读取 Docker 服务：{exc}[/red]")
+        return 1
+
+    if not services:
+        console.print("[yellow]没有发现 Dev Container 服务[/yellow]")
+        return 0 if args.list else 1
+
+    if args.list:
+        table = Table(
+            "服务",
+            "状态",
+            "workspace（宿主机）",
+            "挂载目标（容器内）",
+            "SSH 端口",
+            "来源",
+        )
+        for service in services:
+            table.add_row(
+                service.name or service.container_id[:12],
+                "在线" if service.running else "离线",
+                service.workspace,
+                service.mount_target or "未知",
+                str(service.ssh_port) if service.ssh_port is not None else "未知",
+                "本工具" if service.managed else "旧版/其他 Dev Container",
+            )
+        console.print(table)
+        return 0
+
+    online = [service for service in services if service.running]
+    if not online:
+        console.print("[yellow]没有在线服务可连接；使用 `connect -l` 查看离线服务[/yellow]")
+        return 1
+
+    selected: Service | None = None
+    if args.service:
+        query = args.service
+        try:
+            query_path = str(Path(query).expanduser().resolve())
+        except (OSError, RuntimeError):
+            query_path = query
+        matches = [
+            service
+            for service in online
+            if query
+            in {
+                service.workspace,
+                service.name,
+                service.container_id,
+                service.container_id[:12],
+            }
+            or query_path == service.workspace
+            or query == Path(service.workspace).name
+        ]
+        if len(matches) == 1:
+            selected = matches[0]
+        elif not matches:
+            console.print(f"[red]找不到在线服务：{query}[/red]")
+            return 1
+
+    if selected is None:
+        choices = [
+            questionary.Choice(_format_service(service), value=index)
+            for index, service in enumerate(online)
+        ]
+        answer = questionary.select("选择要连接的在线服务：", choices=choices).ask()
+        if answer is None:
+            return 130
+        selected = online[answer]
+
+    try:
+        return connect_service(selected)
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]无法连接服务：{exc}[/red]")
+        return 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="coding-agent-devcontainer",
@@ -271,6 +375,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="临时追加端口映射，可重复指定，例如 --add-port 8080:80",
     )
     up_parser.set_defaults(func=cmd_up)
+
+    connect_parser = sub.add_parser("connect", help="列出或连接 Dev Container 服务")
+    connect_parser.add_argument(
+        "-l", "--list", action="store_true", help="列出在线和离线服务及 workspace 挂载信息"
+    )
+    connect_parser.add_argument(
+        "service",
+        nargs="?",
+        help="workspace 路径、项目目录名、容器名或容器 ID（默认交互选择）",
+    ).completer = _service_completer
+    connect_parser.set_defaults(func=cmd_connect)
 
     return parser
 

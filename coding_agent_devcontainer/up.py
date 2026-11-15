@@ -10,6 +10,7 @@ from pathlib import Path
 
 from rich.console import Console
 
+from .constants import MANAGED_CONTAINER_LABEL
 from .render import workspace_mount_spec
 
 console = Console()
@@ -359,7 +360,14 @@ def workspace_up(
         up_args.extend(["--remove-existing-container", "--build-no-cache"])
 
     override_path: Path | None = None
-    override: dict[str, object] = {}
+    run_args = config_data.get("runArgs") or []
+    if not isinstance(run_args, list) or not all(isinstance(arg, str) for arg in run_args):
+        console.print("[red]devcontainer.json 中的 runArgs 必须是字符串列表[/red]")
+        return 1
+    managed_label_arg = f"--label={MANAGED_CONTAINER_LABEL}=true"
+    if managed_label_arg not in run_args:
+        run_args.append(managed_label_arg)
+    override: dict[str, object] = {"runArgs": run_args}
     if add_ports:
         override["appPort"] = [*app_ports, *add_ports]
     if workspace_mount_target:

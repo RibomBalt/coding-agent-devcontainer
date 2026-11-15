@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .constants import BASE_IMAGE
+from .constants import BASE_IMAGE, MANAGED_CONTAINER_LABEL
 from .features import get_feature
 from .ports import BASE_PORTS
 
@@ -129,7 +129,11 @@ def render_devcontainer(
         if feature is not None:
             features[feature.reference] = dict((feature_options or {}).get(feature_id, {}))
 
-    run_args = ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"]
+    run_args = [
+        "--cap-add=NET_ADMIN",
+        "--cap-add=NET_RAW",
+        f"--label={MANAGED_CONTAINER_LABEL}=true",
+    ]
     if gpu:
         run_args.append("--gpus=all")
 

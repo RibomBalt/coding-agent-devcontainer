@@ -15,3 +15,6 @@ BASE_IMAGE = os.environ.get(
 )
 
 REMOTE_USER = "node"
+
+# Runtime marker used to identify containers launched by this CLI.
+MANAGED_CONTAINER_LABEL = "io.github.ribombalt.coding-agent-devcontainer.managed"
