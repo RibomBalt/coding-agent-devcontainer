@@ -121,6 +121,8 @@ def test_connect_service_execs_zsh_as_node_with_host_terminal_vars(monkeypatch) 
         "TERM=xterm-256color",
         "--env",
         "COLORTERM=truecolor",
+        "--workdir",
+        "/workspace/alpha",
         "abc123",
         "zsh",
     ]
@@ -148,6 +150,8 @@ def test_connect_service_does_not_invent_terminal_vars(monkeypatch) -> None:
         "--tty",
         "--user",
         "node",
+        "--workdir",
+        "/workspace/alpha",
         "abc123",
         "zsh",
     ]

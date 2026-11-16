@@ -107,5 +107,7 @@ def connect_service(service: Service) -> int:
         value = os.environ.get(variable)
         if value:
             command.extend(["--env", f"{variable}={value}"])
+    if service.mount_target:
+        command.extend(["--workdir", service.mount_target])
     command.extend([service.container_id, "zsh"])
     return subprocess.run(command, check=False).returncode
