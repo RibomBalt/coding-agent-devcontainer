@@ -164,7 +164,10 @@ def test_workspace_up_injects_every_rendered_port(monkeypatch, tmp_path: Path) -
 
 def test_workspace_up_overrides_workspace_mount_target(monkeypatch, tmp_path: Path) -> None:
     config_path = tmp_path / ".devcontainer" / "devcontainer.json"
-    _write(config_path, json.dumps({"appPort": []}))
+    _write(
+        config_path,
+        json.dumps({"image": "example/devcontainer:latest", "appPort": []}),
+    )
     captured: dict = {}
 
     monkeypatch.setattr(
@@ -196,6 +199,8 @@ def test_workspace_up_overrides_workspace_mount_target(monkeypatch, tmp_path: Pa
         == 0
     )
     assert captured["override"] == {
+        "image": "example/devcontainer:latest",
+        "appPort": [],
         "runArgs": ["--label=io.github.ribombalt.coding-agent-devcontainer.managed=true"],
         "workspaceMount": (
             "source=${localWorkspaceFolder},target=/workspace/custom-project,"

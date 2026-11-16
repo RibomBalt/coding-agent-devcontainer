@@ -367,7 +367,11 @@ def workspace_up(
     managed_label_arg = f"--label={MANAGED_CONTAINER_LABEL}=true"
     if managed_label_arg not in run_args:
         run_args.append(managed_label_arg)
-    override: dict[str, object] = {"runArgs": run_args}
+    # Dev Container CLI may treat --override-config as the config it loads,
+    # rather than merging it with --config. Keep the complete project config
+    # in the temporary file so required fields such as `image` remain present.
+    override: dict[str, object] = dict(config_data)
+    override["runArgs"] = run_args
     if add_ports:
         override["appPort"] = [*app_ports, *add_ports]
     if workspace_mount_target:
